@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Mission Division</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mission Div">
+<meta name="theme-color" content="#0e0f30">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%230e0f30'/%3E%3Ccircle cx='90' cy='78' r='78' fill='%231b1c4d'/%3E%3Ctext x='90' y='112' font-size='92' text-anchor='middle'%3E%F0%9F%9B%B8%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#0e0f30;
+    --bg-panel:#1b1c4d;
+    --bg-panel-2:#262a68;
+    --bg-field:#151640;
+    --accent-cyan:#5eead4;
+    --accent-gold:#ffd166;
+    --accent-coral:#ff6b6b;
+    --text-light:#f5f5fc;
+    --text-dim:#a3a6d8;
+    --border-soft:rgba(255,255,255,0.08);
+    --radius-lg:28px;
+    --radius-md:18px;
+    --radius-sm:12px;
+    --fs-display:clamp(1.5rem,5.5vw,2.1rem);
+    --fs-equation:clamp(2.1rem,9vw,3rem);
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    background:var(--bg-deep);
+    color:var(--text-light);
+    font-family:'Nunito',system-ui,sans-serif;
+    min-height:100%;
+    display:flex;
+    justify-content:center;
+    padding-inline:16px;
+    padding-block:20px;
+    overflow-x:hidden;
+  }
+
+  .starfield{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  .star{
+    position:absolute;
+    background:#fff;
+    border-radius:50%;
+    opacity:.6;
+    animation:twinkle 3s ease-in-out infinite;
+  }
+  @keyframes twinkle{
+    0%,100%{ opacity:.15; }
+    50%{ opacity:.9; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .star{ animation:none; opacity:.5; }
+  }
+
+  #app{
+    position:relative;
+    z-index:1;
+    width:100%;
+    max-width:460px;
+  }
+
+  .console{
+    background:linear-gradient(180deg,var(--bg-panel),var(--bg-panel-2));
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius-lg);
+    padding:22px;
+    box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand-rocket{ font-size:1.6rem; line-height:1; }
+  .brand-text h1{
+    font-family:'Baloo 2',system-ui,sans-serif;
+    font-weight:800;
+    font-size:var(--fs-display);
+    margin:0;
+    text-wrap:balance;
+    letter-spacing:.2px;
+  }
+  .brand-text p{
+    margin:2px 0 0;
+    font-size:.78rem;
+    color:var(--text-dim);
+  }
+
+  .icon-btn{
+    background:var(--bg-field);
+    border:1px solid var(--border-soft);
+    color:var(--text-light);
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    font-size:1.1rem;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex:none;
+  }
+  .icon-btn:focus-visible, button:focus-visible{
+    outline:2px solid var(--accent-cyan);
+    outline-offset:2px;
+  }
+
+  .subtitle{
+    margin:0;
+    color:var(--text-dim);
+    font-size:.9rem;
+    line-height:1.4;
+  }
+
+  .planet-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+  }
+
+  .planet-card{
+    background:var(--bg-field);
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius-md);
+    padding:10px 8px 12px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    cursor:pointer;
+    color:var(--text-light);
+    font-family:'Nunito',sans-serif;
+    transition:transform .12s ease, background .12s ease;
+  }
+  .planet-card:hover{ background:var(--bg-panel-2); transform:translateY(-2px); }
+  .planet-card:active{ transform:translateY(0); }
+
+  .planet-swatch{
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    position:relative;
+    flex:none;
+  }
+  .planet-swatch.ringed::after{
+    content:"";
+    position:absolute;
+    left:50%; top:50%;
+    width:74px; height:22px;
+    border:3px solid rgba(255,255,255,.55);
+    border-radius:50%;
+    transform:translate(-50%,-50%) rotate(-18deg);
+  }
+  .planet-swatch.banded{
+    background-image:repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,.25) 0 3px,
+      transparent 3px 8px
+    );
+  }
+  .planet-swatch.mixed{
+    background:conic-gradient(from 0deg,#5eead4,#ffd166,#ff6b6b,#c77dff,#5eead4);
+  }
+
+  .planet-name{
+    font-weight:700;
+    font-size:.72rem;
+    text-align:center;
+    line-height:1.15;
+  }
+  .planet-table{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:.68rem;
+    color:var(--text-dim);
+  }
+  .planet-stars{
+    display:flex;
+    gap:2px;
+    font-size:.7rem;
+  }
+  .planet-stars .off{ opacity:.25; }
+
+  .game-topline{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    font-size:.85rem;
+    color:var(--text-dim);
+  }
+  .streak{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    font-weight:700;
+    color:var(--accent-gold);
+  }
+
+  .timer-track{
+    width:100%;
+    height:8px;
+    border-radius:6px;
+    background:var(--bg-field);
+    overflow:hidden;
+  }
+  .timer-fill{
+    height:100%;
+    background:linear-gradient(90deg,var(--accent-cyan),var(--accent-gold));
+    width:100%;
+    transform-origin:left;
+  }
+  .timer-fill.running{
+    animation:drain linear forwards;
+  }
+  @keyframes drain{
+    from{ width:100%; }
+    to{ width:0%; }
+  }
+
+  .mission-label{
+    text-align:center;
+    font-size:.8rem;
+    color:var(--text-dim);
+  }
+  .mission-label strong{ color:var(--text-light); }
+
+  .equation-card{
+    background:var(--bg-field);
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius-md);
+    padding:26px 10px;
+    text-align:center;
+  }
+  .equation{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:var(--fs-equation);
+    font-variant-numeric:tabular-nums;
+    letter-spacing:1px;
+  }
+
+  .choices{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .choice-btn{
+    background:var(--bg-field);
+    border:2px solid var(--border-soft);
+    color:var(--text-light);
+    border-radius:var(--radius-sm);
+    padding:16px 6px;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:1.4rem;
+    font-variant-numeric:tabular-nums;
+    cursor:pointer;
+  }
+  .choice-btn:disabled{ cursor:default; }
+  .choice-btn.correct{
+    background:rgba(94,234,212,.18);
+    border-color:var(--accent-cyan);
+    color:var(--accent-cyan);
+  }
+  .choice-btn.wrong{
+    background:rgba(255,107,107,.18);
+    border-color:var(--accent-coral);
+    color:var(--accent-coral);
+  }
+
+  .feedback{
+    min-height:1.4em;
+    text-align:center;
+    font-weight:700;
+    font-size:.95rem;
+  }
+  .feedback.good{ color:var(--accent-cyan); }
+  .feedback.bad{ color:var(--accent-coral); }
+
+  .primary-btn{
+    background:var(--accent-cyan);
+    color:#052b26;
+    border:none;
+    border-radius:var(--radius-sm);
+    padding:14px;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:1.05rem;
+    cursor:pointer;
+  }
+  .ghost-btn{
+    background:transparent;
+    color:var(--text-dim);
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius-sm);
+    padding:12px;
+    font-family:'Nunito',sans-serif;
+    font-weight:700;
+    font-size:.9rem;
+    cursor:pointer;
+  }
+
+  .result-hero{
+    text-align:center;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+  }
+  .result-rocket{
+    font-size:3rem;
+    animation:launch 1.4s ease-out;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .result-rocket{ animation:none; }
+  }
+  @keyframes launch{
+    0%{ transform:translateY(20px); opacity:0; }
+    60%{ transform:translateY(-6px); opacity:1; }
+    100%{ transform:translateY(0); }
+  }
+  .result-title{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:var(--fs-display);
+    margin:0;
+  }
+  .result-stars{
+    font-size:1.8rem;
+    letter-spacing:4px;
+  }
+  .result-stats{
+    display:flex;
+    justify-content:space-around;
+    background:var(--bg-field);
+    border-radius:var(--radius-md);
+    padding:14px;
+    border:1px solid var(--border-soft);
+  }
+  .stat{
+    text-align:center;
+  }
+  .stat-value{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:1.3rem;
+    font-variant-numeric:tabular-nums;
+    color:var(--accent-gold);
+  }
+  .stat-label{
+    font-size:.7rem;
+    color:var(--text-dim);
+  }
+  .result-actions{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  [hidden]{ display:none !important; }
+</style>
+</head>
+<body>
+<div class="starfield" id="starfield"></div>
+<div id="app"></div>
+
+<script>
+(function(){
+  var PLANETS = [
+    {id:1,  name:'Base Lunaire',    color:'#cbd5e1'},
+    {id:2,  name:'Mercure',        color:'#b8b0c4'},
+    {id:3,  name:'Vénus',          color:'#e9c46a'},
+    {id:4,  name:'Mars',           color:'#e76f51'},
+    {id:5,  name:'Cérès',          color:'#8d99ae'},
+    {id:6,  name:'Jupiter',        color:'#f4a261', banded:true},
+    {id:7,  name:'Saturne',        color:'#f7d488', ring:true},
+    {id:8,  name:'Uranus',         color:'#80ffdb'},
+    {id:9,  name:'Neptune',        color:'#4d7dff'},
+    {id:10, name:'Pluton',         color:'#adb5bd'}
+  ];
+  var QUESTIONS_PER_ROUND = 10;
+  var TIME_PER_QUESTION = 15;
+
+  var state = {
+    screen:'menu',
+    tableId:null,
+    questions:[],
+    currentIndex:0,
+    correctCount:0,
+    streak:0,
+    bestStreak:0,
+    answered:false,
+    muted:false
+  };
+
+  function loadProgress(){
+    try{ return JSON.parse(localStorage.getItem('md_progress') || '{}'); }
+    catch(e){ return {}; }
+  }
+  function saveProgress(p){
+    try{ localStorage.setItem('md_progress', JSON.stringify(p)); }
+    catch(e){}
+  }
+  function loadMuted(){
+    try{ return localStorage.getItem('md_muted') === '1'; }
+    catch(e){ return false; }
+  }
+  function saveMuted(v){
+    try{ localStorage.setItem('md_muted', v ? '1' : '0'); }
+    catch(e){}
+  }
+  state.muted = loadMuted();
+
+  var audioCtx = null;
+  function playTone(freq, dur, type){
+    if (state.muted) return;
+    try{
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.value = freq;
+      gain.gain.value = 0.08;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+      osc.stop(audioCtx.currentTime + dur);
+    }catch(e){}
+  }
+  function playCorrect(){ playTone(660,0.12,'triangle'); setTimeout(function(){ playTone(880,0.15,'triangle'); },90); }
+  function playWrong(){ playTone(180,0.25,'sawtooth'); }
+
+  function shuffle(arr){
+    for (var i = arr.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  function makeChoices(n, correct){
+    var pool = new Set();
+    [correct + 1, correct - 1, correct + 2, correct - 2, correct + 3, correct - 3, n, correct + n, correct - n]
+      .forEach(function(c){
+        if (c > 0 && c <= 10 && c !== correct) pool.add(c);
+      });
+    var picks = shuffle(Array.from(pool)).slice(0, 3);
+    var guard = 0;
+    while (picks.length < 3 && guard < 50){
+      guard++;
+      var r = 1 + Math.floor(Math.random() * 10);
+      if (r !== correct && picks.indexOf(r) === -1) picks.push(r);
+    }
+    return shuffle([correct].concat(picks));
+  }
+
+  function makeQuestion(tableId){
+    var n = tableId === 'mixed' ? (2 + Math.floor(Math.random() * 9)) : tableId;
+    var correct = 1 + Math.floor(Math.random() * 10);
+    return { n: n, dividend: n * correct, correct: correct, choices: makeChoices(n, correct) };
+  }
+
+  function starsFor(score){
+    if (score >= 9) return 3;
+    if (score >= 7) return 2;
+    if (score >= 5) return 1;
+    return 0;
+  }
+
+  function starRow(count, size){
+    var s = '';
+    for (var i = 0; i < 3; i++){
+      s += '<span class="' + (i < count ? '' : 'off') + '">' + (i < count ? '⭐' : '☆') + '</span>';
+    }
+    return '<span class="' + (size || '') + '">' + s + '</span>';
+  }
+
+  function planetLabel(tableId){
+    if (tableId === 'mixed') return 'Voyage Galactique';
+    var p = PLANETS.filter(function(pl){ return pl.id === tableId; })[0];
+    return p ? p.name : '';
+  }
+
+  var app = document.getElementById('app');
+  var timerTimeout = null;
+  var advanceTimeout = null;
+
+  function render(){
+    if (state.screen === 'menu') renderMenu();
+    else if (state.screen === 'game') renderGame();
+    else if (state.screen === 'result') renderResult();
+  }
+
+  function renderMenu(){
+    var progress = loadProgress();
+    var cards = PLANETS.map(function(p){
+      var best = progress[p.id] || { stars: 0 };
+      var classes = 'planet-swatch' + (p.ring ? ' ringed' : '') + (p.banded ? ' banded' : '');
+      return '' +
+        '<button class="planet-card" data-table="' + p.id + '">' +
+          '<span class="' + classes + '" style="background:radial-gradient(circle at 32% 28%, #fff8, ' + p.color + ' 45%, #0006)"></span>' +
+          '<span class="planet-name">' + p.name + '</span>' +
+          '<span class="planet-table">Divisions par ' + p.id + '</span>' +
+          starRow(best.stars, 'planet-stars') +
+        '</button>';
+    }).join('');
+
+    var mixedBest = progress['mixed'] || { stars: 0 };
+
+    app.innerHTML = '' +
+      '<div class="console">' +
+        '<div class="topbar">' +
+          '<div class="brand">' +
+            '<span class="brand-rocket">🛸</span>' +
+            '<div class="brand-text">' +
+              '<h1>Mission Division</h1>' +
+              '<p>Choisis une planète et partage les cargaisons !</p>' +
+            '</div>' +
+          '</div>' +
+          '<button class="icon-btn" id="muteBtn" aria-label="Son">' + (state.muted ? '🔇' : '🔊') + '</button>' +
+        '</div>' +
+        '<button class="planet-card" id="mixedCard" style="flex-direction:row; justify-content:flex-start; gap:12px;">' +
+          '<span class="planet-swatch mixed"></span>' +
+          '<span style="display:flex; flex-direction:column; align-items:flex-start; gap:4px;">' +
+            '<span class="planet-name" style="font-size:.9rem;">Voyage Galactique</span>' +
+            '<span class="planet-table" style="font-size:.72rem;">Toutes les divisions mélangées</span>' +
+            starRow(mixedBest.stars) +
+          '</span>' +
+        '</button>' +
+        '<div class="planet-grid">' + cards + '</div>' +
+      '</div>';
+
+    document.getElementById('muteBtn').addEventListener('click', function(){
+      state.muted = !state.muted;
+      saveMuted(state.muted);
+      render();
+    });
+    document.getElementById('mixedCard').addEventListener('click', function(){
+      startRound('mixed');
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.planet-card[data-table]'), function(btn){
+      btn.addEventListener('click', function(){
+        startRound(parseInt(btn.getAttribute('data-table'), 10));
+      });
+    });
+  }
+
+  function startRound(tableId){
+    state.tableId = tableId;
+    state.questions = [];
+    for (var i = 0; i < QUESTIONS_PER_ROUND; i++) state.questions.push(makeQuestion(tableId));
+    state.currentIndex = 0;
+    state.correctCount = 0;
+    state.streak = 0;
+    state.bestStreak = 0;
+    state.answered = false;
+    state.screen = 'game';
+    render();
+  }
+
+  function renderGame(){
+    clearTimeout(timerTimeout);
+    clearTimeout(advanceTimeout);
+    var q = state.questions[state.currentIndex];
+    var choiceButtons = q.choices.map(function(c){
+      return '<button class="choice-btn" data-value="' + c + '">' + c + '</button>';
+    }).join('');
+
+    app.innerHTML = '' +
+      '<div class="console">' +
+        '<div class="topbar">' +
+          '<button class="icon-btn" id="backBtn" aria-label="Retour">←</button>' +
+          '<div class="streak">🔥 <span>' + state.streak + '</span></div>' +
+          '<button class="icon-btn" id="muteBtn2" aria-label="Son">' + (state.muted ? '🔇' : '🔊') + '</button>' +
+        '</div>' +
+        '<p class="mission-label">Mission vers <strong>' + planetLabel(state.tableId) + '</strong> — question ' + (state.currentIndex + 1) + ' / ' + QUESTIONS_PER_ROUND + '</p>' +
+        '<div class="timer-track"><div class="timer-fill running" id="timerFill" style="animation-duration:' + TIME_PER_QUESTION + 's"></div></div>' +
+        '<div class="equation-card">' +
+          '<div class="equation">' + q.dividend + ' &divide; ' + q.n + ' = ?</div>' +
+        '</div>' +
+        '<div class="choices" id="choices">' + choiceButtons + '</div>' +
+        '<div class="feedback" id="feedback" aria-live="polite"></div>' +
+      '</div>';
+
+    document.getElementById('backBtn').addEventListener('click', function(){
+      state.screen = 'menu';
+      render();
+    });
+    document.getElementById('muteBtn2').addEventListener('click', function(){
+      state.muted = !state.muted;
+      saveMuted(state.muted);
+      render();
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.choice-btn'), function(btn){
+      btn.addEventListener('click', function(){
+        handleAnswer(parseInt(btn.getAttribute('data-value'), 10));
+      });
+    });
+
+    timerTimeout = setTimeout(function(){
+      handleAnswer(null);
+    }, TIME_PER_QUESTION * 1000);
+  }
+
+  function handleAnswer(value){
+    if (state.answered) return;
+    state.answered = true;
+    clearTimeout(timerTimeout);
+
+    var q = state.questions[state.currentIndex];
+    var isCorrect = value === q.correct;
+    var feedback = document.getElementById('feedback');
+    var timerFill = document.getElementById('timerFill');
+    if (timerFill) timerFill.classList.remove('running');
+
+    Array.prototype.forEach.call(document.querySelectorAll('.choice-btn'), function(btn){
+      btn.disabled = true;
+      var v = parseInt(btn.getAttribute('data-value'), 10);
+      if (v === q.correct) btn.classList.add('correct');
+      else if (v === value) btn.classList.add('wrong');
+    });
+
+    if (isCorrect){
+      state.correctCount++;
+      state.streak++;
+      state.bestStreak = Math.max(state.bestStreak, state.streak);
+      feedback.className = 'feedback good';
+      feedback.textContent = pickPraise();
+      playCorrect();
+    } else {
+      state.streak = 0;
+      feedback.className = 'feedback bad';
+      feedback.textContent = value === null
+        ? 'Trop tard ! ' + q.dividend + ' ÷ ' + q.n + ' = ' + q.correct + ', car ' + q.n + ' × ' + q.correct + ' = ' + q.dividend + '.'
+        : 'Presque ! ' + q.dividend + ' ÷ ' + q.n + ' = ' + q.correct + ', car ' + q.n + ' × ' + q.correct + ' = ' + q.dividend + '.';
+      playWrong();
+    }
+
+    advanceTimeout = setTimeout(function(){
+      state.answered = false;
+      if (state.currentIndex + 1 < state.questions.length){
+        state.currentIndex++;
+        renderGame();
+      } else {
+        finishRound();
+      }
+    }, 1500);
+  }
+
+  function pickPraise(){
+    var lines = ['Bien joué !', 'Exact !', 'Super !', 'Parfait !', 'Génial !'];
+    return lines[Math.floor(Math.random() * lines.length)];
+  }
+
+  function finishRound(){
+    var stars = starsFor(state.correctCount);
+    var progress = loadProgress();
+    var prev = progress[state.tableId] || { stars: 0, best: 0 };
+    var improved = stars > prev.stars || state.correctCount > (prev.best || 0);
+    progress[state.tableId] = {
+      stars: Math.max(stars, prev.stars || 0),
+      best: Math.max(state.correctCount, prev.best || 0)
+    };
+    saveProgress(progress);
+    state.screen = 'result';
+    state._lastStars = stars;
+    state._improved = improved;
+    render();
+  }
+
+  function renderResult(){
+    var stars = state._lastStars;
+    var title = stars === 3 ? 'Mission parfaite !' : stars === 2 ? 'Belle mission !' : stars === 1 ? 'Mission réussie !' : 'On continue de s\'entraîner !';
+    var starGlyphs = '';
+    for (var i = 0; i < 3; i++) starGlyphs += (i < stars ? '⭐' : '☆');
+
+    app.innerHTML = '' +
+      '<div class="console">' +
+        '<div class="result-hero">' +
+          '<div class="result-rocket">🛸</div>' +
+          '<h2 class="result-title">' + title + '</h2>' +
+          '<div class="result-stars">' + starGlyphs + '</div>' +
+          (state._improved ? '<p class="feedback good">Nouveau record sur cette planète !</p>' : '') +
+        '</div>' +
+        '<div class="result-stats">' +
+          '<div class="stat"><div class="stat-value">' + state.correctCount + '/' + QUESTIONS_PER_ROUND + '</div><div class="stat-label">Bonnes réponses</div></div>' +
+          '<div class="stat"><div class="stat-value">' + state.bestStreak + '</div><div class="stat-label">Meilleure série</div></div>' +
+        '</div>' +
+        '<div class="result-actions">' +
+          '<button class="primary-btn" id="replayBtn">Rejouer cette mission</button>' +
+          '<button class="ghost-btn" id="menuBtn">Choisir une autre planète</button>' +
+        '</div>' +
+      '</div>';
+
+    document.getElementById('replayBtn').addEventListener('click', function(){
+      startRound(state.tableId);
+    });
+    document.getElementById('menuBtn').addEventListener('click', function(){
+      state.screen = 'menu';
+      render();
+    });
+  }
+
+  function buildStarfield(){
+    var field = document.getElementById('starfield');
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < 70; i++){
+      var star = document.createElement('span');
+      star.className = 'star';
+      var size = 1 + Math.random() * 2;
+      star.style.width = size + 'px';
+      star.style.height = size + 'px';
+      star.style.left = Math.random() * 100 + '%';
+      star.style.top = Math.random() * 100 + '%';
+      star.style.animationDuration = (2 + Math.random() * 3) + 's';
+      star.style.animationDelay = (Math.random() * 3) + 's';
+      frag.appendChild(star);
+    }
+    field.appendChild(frag);
+  }
+
+  function boot(data){
+    if (data && data.state) state = data.state;
+    buildStarfield();
+    render();
+  }
+
+  if (window.claude && window.claude.hot){
+    window.claude.hot.snapshot(function(){ return { state: state }; });
+    if (window.claude.hot.ready) window.claude.hot.ready(boot);
+    else boot(window.claude.hot.data);
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>

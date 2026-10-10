@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jeux de maths</title>
+<meta name="theme-color" content="#0e0f30">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  html{ padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+  body{
+    margin:0;
+    min-height:100vh;
+    background:#0e0f30;
+    color:#f5f5fc;
+    font-family:'Nunito',system-ui,sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding-inline:16px;
+    padding-block:24px;
+  }
+  main{
+    width:100%;
+    max-width:460px;
+    background:linear-gradient(180deg,#1b1c4d,#262a68);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:28px;
+    padding:26px 22px;
+    box-shadow:0 20px 60px rgba(0,0,0,.45);
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  h1{
+    font-family:'Baloo 2',system-ui,sans-serif;
+    font-weight:800;
+    font-size:clamp(1.6rem,6vw,2.1rem);
+    margin:0;
+    text-wrap:balance;
+  }
+  p{ margin:0; color:#a3a6d8; font-size:.95rem; }
+  a.game{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:#151640;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:18px;
+    padding:16px;
+    color:inherit;
+    text-decoration:none;
+  }
+  a.game:hover{ background:#262a68; }
+  a.game:focus-visible{ outline:2px solid #5eead4; outline-offset:2px; }
+  .emoji{ font-size:2rem; line-height:1; }
+  .name{
+    font-family:'Baloo 2',system-ui,sans-serif;
+    font-weight:700;
+    font-size:1.25rem;
+    display:block;
+  }
+  .desc{ font-size:.85rem; color:#a3a6d8; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Jeux de maths</h1>
+  <p>Choisis ta mission !</p>
+  <a class="game" href="multiplication/">
+    <span class="emoji">🚀</span>
+    <span><span class="name">Mission Multiplication</span><span class="desc">Les tables de multiplication, de 1 à 12</span></span>
+  </a>
+  <a class="game" href="division/">
+    <span class="emoji">🛸</span>
+    <span><span class="name">Mission Division</span><span class="desc">Les divisions, de 1 à 10</span></span>
+  </a>
+</main>
+</body>
+</html>
