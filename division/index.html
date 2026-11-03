@@ -380,6 +380,10 @@
     font-size:.7rem;
     color:var(--text-dim);
   }
+  .top-actions{ display:flex; gap:8px; flex:none; }
+  a.icon-btn, a.ghost-btn{ text-decoration:none; }
+  a.ghost-btn{ text-align:center; }
+
   .result-actions{
     display:flex;
     flex-direction:column;
@@ -547,7 +551,10 @@
               '<p>Choisis une planète et partage les cargaisons !</p>' +
             '</div>' +
           '</div>' +
-          '<button class="icon-btn" id="muteBtn" aria-label="Son">' + (state.muted ? '🔇' : '🔊') + '</button>' +
+          '<div class="top-actions">' +
+            '<a class="icon-btn" href="../" aria-label="Retour à l\'accueil">🏠</a>' +
+            '<button class="icon-btn" id="muteBtn" aria-label="Son">' + (state.muted ? '🔇' : '🔊') + '</button>' +
+          '</div>' +
         '</div>' +
         '<button class="planet-card" id="mixedCard" style="flex-direction:row; justify-content:flex-start; gap:12px;">' +
           '<span class="planet-swatch mixed"></span>' +
@@ -721,6 +728,7 @@
         '<div class="result-actions">' +
           '<button class="primary-btn" id="replayBtn">Rejouer cette mission</button>' +
           '<button class="ghost-btn" id="menuBtn">Choisir une autre planète</button>' +
+          '<a class="ghost-btn" href="../">Retour à l\'accueil des jeux</a>' +
         '</div>' +
       '</div>';
 
