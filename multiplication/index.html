@@ -142,11 +142,8 @@
 
   .planet-grid{
     display:grid;
-    grid-template-columns:repeat(3,1fr);
+    grid-template-columns:repeat(2,1fr);
     gap:12px;
-  }
-  @media (max-width:380px){
-    .planet-grid{ grid-template-columns:repeat(2,1fr); }
   }
 
   .planet-card{
@@ -408,9 +405,7 @@
     {id:7,  name:'Saturne',        color:'#f7d488', ring:true},
     {id:8,  name:'Uranus',         color:'#80ffdb'},
     {id:9,  name:'Neptune',        color:'#4d7dff'},
-    {id:10, name:'Pluton',         color:'#adb5bd'},
-    {id:11, name:'Étoile Polaire', color:'#ffe066'},
-    {id:12, name:'Andromède',      color:'#c77dff'}
+    {id:10, name:'Pluton',         color:'#adb5bd'}
   ];
   var QUESTIONS_PER_ROUND = 10;
   var TIME_PER_QUESTION = 15;
@@ -498,8 +493,8 @@
   }
 
   function makeQuestion(tableId){
-    var a = tableId === 'mixed' ? (2 + Math.floor(Math.random() * 11)) : tableId;
-    var b = 1 + Math.floor(Math.random() * 12);
+    var a = tableId === 'mixed' ? (2 + Math.floor(Math.random() * 9)) : tableId;
+    var b = 1 + Math.floor(Math.random() * 10);
     var correct = a * b;
     return { a: a, b: b, correct: correct, choices: makeChoices(a, b, correct) };
   }
@@ -614,7 +609,7 @@
       '<div class="console">' +
         '<div class="topbar">' +
           '<button class="icon-btn" id="backBtn" aria-label="Retour">←</button>' +
-          '<div class="streak">🔥 <span>' + state.streak + '</span></div>' +
+          '<div class="streak">🔥 <span id="streakValue">' + state.streak + '</span></div>' +
           '<button class="icon-btn" id="muteBtn2" aria-label="Son">' + (state.muted ? '🔇' : '🔊') + '</button>' +
         '</div>' +
         '<p class="mission-label">Mission vers <strong>' + planetLabel(state.tableId) + '</strong> — question ' + (state.currentIndex + 1) + ' / ' + QUESTIONS_PER_ROUND + '</p>' +
@@ -679,6 +674,8 @@
         : 'Presque ! La bonne réponse était ' + q.correct + '.';
       playWrong();
     }
+
+    document.getElementById('streakValue').textContent = state.streak;
 
     advanceTimeout = setTimeout(function(){
       state.answered = false;

@@ -600,7 +600,7 @@
       '<div class="console">' +
         '<div class="topbar">' +
           '<button class="icon-btn" id="backBtn" aria-label="Retour">←</button>' +
-          '<div class="streak">🔥 <span>' + state.streak + '</span></div>' +
+          '<div class="streak">🔥 <span id="streakValue">' + state.streak + '</span></div>' +
           '<button class="icon-btn" id="muteBtn2" aria-label="Son">' + (state.muted ? '🔇' : '🔊') + '</button>' +
         '</div>' +
         '<p class="mission-label">Mission vers <strong>' + planetLabel(state.tableId) + '</strong> — question ' + (state.currentIndex + 1) + ' / ' + QUESTIONS_PER_ROUND + '</p>' +
@@ -665,6 +665,8 @@
         : 'Presque ! ' + q.dividend + ' ÷ ' + q.n + ' = ' + q.correct + ', car ' + q.n + ' × ' + q.correct + ' = ' + q.dividend + '.';
       playWrong();
     }
+
+    document.getElementById('streakValue').textContent = state.streak;
 
     advanceTimeout = setTimeout(function(){
       state.answered = false;
