@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Atelier Fractions</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fractions">
+<meta name="theme-color" content="#0e0f30">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%230e0f30'/%3E%3Ccircle cx='90' cy='78' r='78' fill='%231b1c4d'/%3E%3Ctext x='90' y='112' font-size='92' text-anchor='middle'%3E%F0%9F%8D%95%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+/* Palette du site Jeux de maths (thème unique, sombre) */
+:root{
+  --bg:#0e0f30; --surface:#1b1c4d; --fg:#f5f5fc; --muted:#a3a6d8; --line:rgba(255,255,255,.1);
+  --accent:#5eead4; --accent-ink:#0e0f30; --accent-soft:rgba(94,234,212,.16); --ok:#5eead4; --ok-soft:rgba(94,234,212,.16); --bad:#ff6b6b; --bad-soft:rgba(255,107,107,.18);
+  --empty:#151640;
+  --d1:#ff6b6b; --d2:#ff9f43; --d3:#ffd166; --d4:#8be04e; --d5:#4d8dff; --d6:#ff7eb6; --d7:#a98bff; --d8:#5eead4; --d9:#f25fa6; --d10:#3ddc84;
+  --font:"Nunito",-apple-system,"SF Pro Rounded",system-ui,sans-serif;
+  --radius:18px;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:17px;line-height:1.4;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 10px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+h1{margin:0;font-family:"Baloo 2",var(--font);font-size:24px;font-weight:800;letter-spacing:-.01em}
+.home{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;background:var(--surface);border:1px solid var(--line);text-decoration:none;font-size:20px}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav button{font:inherit;font-weight:700;font-size:16px;padding:10px 16px;border-radius:999px;border:2px solid var(--line);background:var(--surface);color:var(--fg);min-height:44px;cursor:pointer}
+nav button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+nav button:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+section[role="tabpanel"]{max-width:1100px;margin:0 auto}
+.hint{color:var(--muted);margin:4px 0 14px;font-size:15px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+h2{margin:0 0 8px;font-size:18px;font-weight:900}
+.num{font-variant-numeric:tabular-nums}
+
+/* fraction empilée */
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;font-weight:700;margin:0 2px}
+.frac .n{padding:0 3px 2px;border-bottom:2px solid currentColor}
+.frac .d{padding:2px 3px 0}
+.big .frac{font-size:1.25em}
+
+/* ---- Mur ---- */
+.wall{display:grid;grid-template-columns:1fr auto;gap:0 14px;align-items:stretch}
+.bars{position:relative;display:grid;gap:7px}
+.row{display:flex;gap:3px;height:46px}
+.cell{flex:1;border:0;border-radius:7px;background:var(--empty);min-width:0;cursor:pointer;color:#0e0f30;font:inherit;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden}
+.cell.on{box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
+.marker{position:absolute;top:-6px;bottom:-6px;width:3px;background:var(--fg);border-radius:2px;transform:translateX(-50%);pointer-events:none;transition:left .15s}
+.reads{display:grid;gap:7px}
+.read{height:46px;display:flex;align-items:center;gap:8px;font-size:15px;white-space:nowrap;min-width:150px}
+.read .eq{display:none;background:var(--ok-soft);color:var(--ok);font-weight:900;border-radius:999px;padding:2px 9px;font-size:13px}
+.read.same .eq{display:inline-block}
+.read .val{color:var(--muted)}
+@media (max-width:640px){ .wall{grid-template-columns:1fr} .reads{display:none} }
+
+/* ---- Disques ---- */
+.discs{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+.disc{display:flex;flex-direction:column;align-items:center;gap:6px}
+.disc svg{width:100%;max-width:190px;aspect-ratio:1;display:block}
+.disc path,.disc circle.full{cursor:pointer;stroke:var(--surface);stroke-width:1.5;transition:fill .12s}
+.disc .label{font-size:15px;display:flex;align-items:center;gap:8px}
+.disc .label .val{color:var(--muted)}
+
+/* ---- Multiplier ---- */
+.mult{display:grid;gap:16px}
+.controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin:8px 0 14px}
+.stepper{display:inline-flex;align-items:center;gap:6px}
+.stepper span.lab{font-size:14px;color:var(--muted);margin-right:4px}
+.stepper button{width:44px;height:44px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--fg);font:inherit;font-size:22px;font-weight:900;cursor:pointer}
+.stepper output{min-width:36px;text-align:center;font-weight:900;font-size:20px}
+.equation{font-size:20px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:10px 0}
+.equation .res{background:var(--accent-soft);color:var(--accent);padding:4px 12px;border-radius:10px}
+.explain{color:var(--muted);font-size:17px;margin:0 0 12px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.explain b{color:var(--fg)}
+.strip{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.strip svg{width:86px;height:86px}
+.strip .plus{font-size:24px;font-weight:900;color:var(--muted)}
+.area svg{width:100%;max-width:420px;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:15px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:16px;height:16px;border-radius:4px;vertical-align:-3px;margin-right:6px}
+
+/* ---- Défi ---- */
+.quiz{display:grid;gap:14px}
+.quiz .q{font-size:22px;font-weight:900;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.quiz .figure svg{width:150px;height:150px}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.choices button{font:inherit;font-size:22px;font-weight:700;min-height:68px;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.choices button.good{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.choices button.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.choices button:disabled{cursor:default}
+.feedback{min-height:28px;font-weight:900;font-size:18px}
+.feedback.ok{color:var(--ok)} .feedback.ko{color:var(--bad)}
+.feedback .explain{margin:8px 0 0;font-weight:700}
+.quizbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.score{color:var(--muted)}
+.primary{font:inherit;font-weight:900;font-size:17px;padding:12px 20px;border-radius:999px;border:0;background:var(--accent);color:var(--accent-ink);min-height:44px;cursor:pointer}
+.ghost{font:inherit;font-weight:700;font-size:15px;padding:10px 16px;border-radius:999px;border:2px solid var(--line);background:var(--surface);color:var(--fg);min-height:44px;cursor:pointer}
+@media (prefers-reduced-motion:reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+<header>
+  <a class="home" href="../" aria-label="Retour à l'accueil">🏠</a>
+  <h1>Atelier Fractions</h1>
+  <nav role="tablist" id="tabs">
+    <button role="tab" data-tab="mur" aria-selected="true">Mur</button>
+    <button role="tab" data-tab="disques" aria-selected="false">Disques</button>
+    <button role="tab" data-tab="multiplier" aria-selected="false">Multiplier</button>
+    <button role="tab" data-tab="defi" aria-selected="false">Défi</button>
+  </nav>
+</header>
+
+<section role="tabpanel" id="panel-mur">
+  <p class="hint">Toucher une barre pour colorier jusqu'à cette part. Le trait repère montre la longueur choisie sur toutes les lignes : les lignes marquées « = » valent exactement la même chose.</p>
+  <div class="card">
+    <div class="wall">
+      <div class="bars" id="bars"><div class="marker" id="marker" hidden></div></div>
+      <div class="reads" id="reads"></div>
+    </div>
+    <p style="margin:14px 0 0"><button class="ghost" id="wallReset">Tout effacer</button></p>
+  </div>
+</section>
+
+<section role="tabpanel" id="panel-disques" hidden>
+  <p class="hint">Toucher une part pour la poser ou la retirer, comme les pièces aimantées. Sous chaque disque : la fraction coloriée, sa valeur décimale et son pourcentage.</p>
+  <div class="card">
+    <div class="discs" id="discs"></div>
+    <p style="margin:14px 0 0"><button class="ghost" id="discReset">Vider les disques</button></p>
+  </div>
+</section>
+
+<section role="tabpanel" id="panel-multiplier" hidden>
+  <p class="hint">Multiplier, c'est répéter. Régler les nombres avec les boutons et regarder ce que ça donne en parts.</p>
+  <div class="mult">
+    <div class="card">
+      <h2>Un nombre × une fraction</h2>
+      <div class="controls">
+        <div class="stepper" id="stA"></div>
+        <div class="stepper" id="stB"></div>
+        <div class="stepper" id="stC"></div>
+      </div>
+      <div class="equation big" id="eqA"></div>
+      <div class="explain num" id="exA"></div>
+      <div class="strip" id="stripA"></div>
+    </div>
+    <div class="card">
+      <h2>Une fraction × une fraction</h2>
+      <div class="controls">
+        <div class="stepper" id="stP"></div>
+        <div class="stepper" id="stQ"></div>
+        <div class="stepper" id="stR"></div>
+        <div class="stepper" id="stS"></div>
+      </div>
+      <div class="equation big" id="eqB"></div>
+      <div class="explain num" id="exB"></div>
+      <div class="area" id="areaB"></div>
+      <div class="legend" id="legB"></div>
+    </div>
+  </div>
+</section>
+
+<section role="tabpanel" id="panel-defi" hidden>
+  <p class="hint">Une question à la fois. Répondre en touchant la bonne réponse, puis passer à la suivante.</p>
+  <div class="card quiz">
+    <div class="quizbar"><span class="score num" id="score">0 bonne réponse sur 0</span><button class="ghost" id="quizReset">Remettre à zéro</button></div>
+    <div class="q" id="qText"></div>
+    <div class="figure" id="qFig"></div>
+    <div class="choices" id="choices"></div>
+    <div class="feedback" id="feedback"></div>
+    <div><button class="primary" id="nextQ">Question suivante</button></div>
+  </div>
+</section>
+
+<script>
+(function(){
+const COL=['', 'var(--d1)','var(--d2)','var(--d3)','var(--d4)','var(--d5)','var(--d6)','var(--d7)','var(--d8)','var(--d9)','var(--d10)'];
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+const simp=(n,d)=>{ if(n===0) return [0,1]; const g=gcd(n,d); return [n/g,d/g]; };
+const frac=(n,d)=>`<span class="frac"><span class="n">${n}</span><span class="d">${d}</span></span>`;
+const fr=(x,digits)=>x.toLocaleString('fr-FR',{maximumFractionDigits:digits});
+// Chaîne d'égalités lisible : 10/4 = 5/2 = 2 + 1/2 = 2,5 (jamais de nombre mixte « 2 ½ »)
+const explain=(n,d)=>{
+  const [a,b]=simp(n,d); const steps=[frac(n,d)];
+  if(b===1){ steps.push(`<b>${a}</b>`); return steps.join(' = '); }
+  if(a!==n) steps.push(frac(a,b));
+  if(a>b){ const w=Math.floor(a/b), r=a%b; steps.push(`<b>${w}</b> + ${frac(r,b)}`); }
+  steps.push(`<b>${fr(n/d,3)}</b>`);
+  return steps.join(' = ');
+};
+const pct=(n,d)=>fr(100*n/d,1)+'&nbsp;%';
+const dec=(n,d)=>fr(n/d,3);
+const el=(id)=>document.getElementById(id);
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+
+/* ---------- secteurs SVG ---------- */
+function sectorPath(i,n,r=48,cx=50,cy=50){
+  const a0=-Math.PI/2+2*Math.PI*i/n, a1=-Math.PI/2+2*Math.PI*(i+1)/n;
+  const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0), x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
+  return `M${cx},${cy} L${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 0 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z`;
+}
+// disque: on = Set d'indices ou nombre k (les k premiers)
+function discSVG(n,on){
+  const isOn=(i)=> (on instanceof Set)? on.has(i) : i<on;
+  let s=`<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="var(--empty)"/>`;
+  if(n===1){ s+=`<circle class="full" cx="50" cy="50" r="48" fill="${isOn(0)?COL[1]:'var(--empty)'}" data-i="0"/>`; }
+  else for(let i=0;i<n;i++) s+=`<path d="${sectorPath(i,n)}" fill="${isOn(i)?COL[n]:'var(--empty)'}" data-i="${i}"/>`;
+  if(n>1) for(let i=0;i<n;i++){ const a=-Math.PI/2+2*Math.PI*i/n; s+=`<line x1="50" y1="50" x2="${(50+48*Math.cos(a)).toFixed(2)}" y2="${(50+48*Math.sin(a)).toFixed(2)}" stroke="var(--surface)" stroke-width="1.5" pointer-events="none"/>`; }
+  s+=`<circle cx="50" cy="50" r="48" fill="none" stroke="var(--line)" stroke-width="1.5" pointer-events="none"/></svg>`;
+  return s;
+}
+
+/* ---------- onglets ---------- */
+const tabs=el('tabs');
+function showTab(name){
+  tabs.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===name)));
+  ['mur','disques','multiplier','defi'].forEach(t=>el('panel-'+t).hidden=(t!==name));
+  if(name==='defi' && !quiz.current) newQuestion();
+}
+tabs.addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) showTab(b.dataset.tab); });
+
+/* ---------- Mur ---------- */
+const wall={filled:Array(11).fill(0), active:0};
+const barsEl=el('bars'), readsEl=el('reads'), marker=el('marker');
+function buildWall(){
+  for(let n=1;n<=10;n++){
+    const row=document.createElement('div'); row.className='row'; row.dataset.n=n;
+    for(let i=0;i<n;i++){ const c=document.createElement('button'); c.className='cell'; c.dataset.i=i; c.setAttribute('aria-label',`${i+1} sur ${n}`); row.appendChild(c); }
+    barsEl.appendChild(row);
+    const r=document.createElement('div'); r.className='read num'; r.dataset.n=n; readsEl.appendChild(r);
+  }
+  barsEl.addEventListener('click',e=>{
+    const c=e.target.closest('.cell'); if(!c) return;
+    const n=+c.parentElement.dataset.n, i=+c.dataset.i+1;
+    wall.filled[n]=(wall.filled[n]===i)? i-1 : i;
+    wall.active = wall.filled[n]? n : 0;
+    renderWall();
+  });
+  el('wallReset').addEventListener('click',()=>{ wall.filled.fill(0); wall.active=0; renderWall(); });
+  renderWall();
+}
+function renderWall(){
+  const av = wall.active? wall.filled[wall.active]/wall.active : null;
+  barsEl.querySelectorAll('.row').forEach(row=>{
+    const n=+row.dataset.n, k=wall.filled[n];
+    row.querySelectorAll('.cell').forEach((c,i)=>{
+      const on=i<k; c.classList.toggle('on',on); c.style.background=on?COL[n]:'';
+      c.innerHTML = on ? frac(1,n) : '';
+    });
+  });
+  readsEl.querySelectorAll('.read').forEach(r=>{
+    const n=+r.dataset.n, k=wall.filled[n];
+    r.innerHTML = k? `${frac(k,n)} <span class="val">= ${dec(k,n)} = ${pct(k,n)}</span> <span class="eq">=</span>` : `<span class="val">${frac(0,n)}</span>`;
+    r.classList.toggle('same', av!==null && n!==wall.active && k>0 && Math.abs(k/n-av)<1e-9);
+  });
+  if(av!==null){ marker.hidden=false; marker.style.left=(100*av)+'%'; } else marker.hidden=true;
+}
+
+/* ---------- Disques ---------- */
+const discs={ on:Array.from({length:11},()=>new Set()) };
+const discsEl=el('discs');
+function buildDiscs(){
+  for(let n=1;n<=10;n++){
+    const d=document.createElement('div'); d.className='disc'; d.dataset.n=n;
+    d.innerHTML=`<div class="svgwrap"></div><div class="label num"></div>`;
+    discsEl.appendChild(d);
+  }
+  discsEl.addEventListener('click',e=>{
+    const t=e.target.closest('[data-i]'); if(!t) return;
+    const n=+t.closest('.disc').dataset.n, i=+t.dataset.i, s=discs.on[n];
+    s.has(i)? s.delete(i) : s.add(i);
+    renderDisc(n);
+  });
+  el('discReset').addEventListener('click',()=>{ discs.on.forEach(s=>s.clear()); for(let n=1;n<=10;n++) renderDisc(n); });
+  for(let n=1;n<=10;n++) renderDisc(n);
+}
+function renderDisc(n){
+  const d=discsEl.querySelector(`.disc[data-n="${n}"]`), k=discs.on[n].size;
+  d.querySelector('.svgwrap').innerHTML=discSVG(n,discs.on[n]);
+  d.querySelector('.label').innerHTML = k? `${frac(k,n)} <span class="val">= ${dec(k,n)} = ${pct(k,n)}</span>` : `<span class="val">parts de ${frac(1,n)}</span>`;
+}
+
+/* ---------- Steppers ---------- */
+function stepper(id,label,min,max,value,onchange){
+  const host=el(id); host.innerHTML=`<span class="lab">${label}</span><button aria-label="moins">−</button><output class="num">${value}</output><button aria-label="plus">+</button>`;
+  const out=host.querySelector('output'), [minus,plus]=host.querySelectorAll('button');
+  const st={value, set(v){ st.value=Math.min(max(),Math.max(min(),v)); out.textContent=st.value; onchange(); }};
+  minus.addEventListener('click',()=>st.set(st.value-1));
+  plus.addEventListener('click',()=>st.set(st.value+1));
+  st.clamp=()=>{ const v=Math.min(max(),Math.max(min(),st.value)); if(v!==st.value){ st.value=v; out.textContent=v; } };
+  return st;
+}
+
+/* ---------- Multiplier A : entier × fraction ---------- */
+let A,B,C;
+function renderA(){
+  C.clamp(); B.clamp();
+  const a=A.value,b=B.value,c=C.value, total=a*b;
+  const terms=Array.from({length:a},()=>frac(b,c)).join(' + ');
+  el('eqA').innerHTML=`<b>${a}</b> × ${frac(b,c)} = ${terms} = <span class="res">${frac(total,c)}</span>`;
+  el('exA').innerHTML=explain(total,c);
+  const parts=[];
+  for(let i=0;i<a;i++){ if(i) parts.push('<span class="plus">+</span>'); parts.push(discSVG(c,b)); }
+  parts.push('<span class="plus">=</span>');
+  let rest=total; while(rest>0){ parts.push(discSVG(c,Math.min(c,rest))); rest-=c; }
+  el('stripA').innerHTML=parts.join('');
+}
+/* ---------- Multiplier B : fraction × fraction (modèle en aire) ---------- */
+let P,Q,R,S;
+function renderB(){
+  Q.clamp(); S.clamp(); P.clamp(); R.clamp();
+  const p=P.value,q=Q.value,r=R.value,s=S.value, num=p*r, den=q*s, [sn,sd]=simp(num,den);
+  const simpl = (sn!==num)? `${frac(num,den)} = <span class="res">${frac(sn,sd)}</span>` : `<span class="res">${frac(num,den)}</span>`;
+  el('eqB').innerHTML=`${frac(p,q)} × ${frac(r,s)} = ${frac(`${p}&thinsp;×&thinsp;${r}`,`${q}&thinsp;×&thinsp;${s}`)} = ${simpl}`;
+  el('exB').innerHTML=explain(num,den);
+  const W=400,H=260,cw=W/q,rh=H/s;
+  let svg=`<svg viewBox="-2 -2 ${W+4} ${H+4}" aria-hidden="true"><rect x="0" y="0" width="${W}" height="${H}" fill="var(--empty)"/>`;
+  for(let i=0;i<p;i++) svg+=`<rect x="${i*cw}" y="0" width="${cw}" height="${H}" fill="${COL[q]}" opacity=".45"/>`;
+  for(let j=0;j<r;j++) svg+=`<rect x="0" y="${j*rh}" width="${W}" height="${rh}" fill="${COL[s]}" opacity=".45"/>`;
+  for(let i=0;i<p;i++) for(let j=0;j<r;j++) svg+=`<rect x="${i*cw+3}" y="${j*rh+3}" width="${cw-6}" height="${rh-6}" rx="4" fill="none" stroke="var(--fg)" stroke-width="2.5"/>`;
+  for(let i=1;i<q;i++) svg+=`<line x1="${i*cw}" y1="0" x2="${i*cw}" y2="${H}" stroke="var(--surface)" stroke-width="2"/>`;
+  for(let j=1;j<s;j++) svg+=`<line x1="0" y1="${j*rh}" x2="${W}" y2="${j*rh}" stroke="var(--surface)" stroke-width="2"/>`;
+  svg+=`<rect x="0" y="0" width="${W}" height="${H}" fill="none" stroke="var(--line)" stroke-width="2"/></svg>`;
+  el('areaB').innerHTML=svg;
+  el('legB').innerHTML=`<span><i style="background:${COL[q]}"></i>${p} colonne${p>1?'s':''} sur ${q}</span><span><i style="background:${COL[s]}"></i>${r} ligne${r>1?'s':''} sur ${s}</span><span><i style="border:2.5px solid var(--fg)"></i>${num} case${num>1?'s':''} coloriée${num>1?'s':''} deux fois sur ${den}</span>`;
+}
+function buildMult(){
+  A=stepper('stA','nombre',()=>1,()=>6,3,renderA);
+  B=stepper('stB','numérateur',()=>1,()=>C.value,1,renderA);
+  C=stepper('stC','dénominateur',()=>2,()=>10,4,renderA);
+  P=stepper('stP','numérateur',()=>1,()=>Q.value,2,renderB);
+  Q=stepper('stQ','dénominateur',()=>2,()=>10,3,renderB);
+  R=stepper('stR','numérateur',()=>1,()=>S.value,3,renderB);
+  S=stepper('stS','dénominateur',()=>2,()=>10,4,renderB);
+  renderA(); renderB();
+}
+
+/* ---------- Défi ---------- */
+const quiz={ ok:0, total:0, current:null };
+function choicesFrom(correct, distractors){
+  // correct/distractors: [n,d]; dédoublonne par valeur, 4 réponses mélangées
+  const seen=new Set([correct[0]/correct[1]]); const out=[{f:correct,good:true}];
+  for(const f of distractors){ if(f[0]<=0||f[1]<=0) continue; const v=f[0]/f[1]; if(seen.has(v)) continue; seen.add(v); out.push({f,good:false}); if(out.length===4) break; }
+  while(out.length<4){ const f=[rnd(1,9),rnd(2,10)]; const v=f[0]/f[1]; if(!seen.has(v)){ seen.add(v); out.push({f,good:false}); } }
+  return out.sort(()=>Math.random()-.5);
+}
+function newQuestion(){
+  const type=rnd(1,3); let q;
+  if(type===1){
+    const n=rnd(2,10), k=rnd(1,n-1);
+    q={ text:'Quelle fraction est coloriée ?', fig:discSVG(n,k), answer:[k,n], explain:true,
+        choices:choicesFrom([k,n],[[n-k,n],[k,n+1],[k+1,n],[n,k]]) };
+  } else if(type===2){
+    const a=rnd(2,5), c=rnd(2,6), b=rnd(1,c-1);
+    q={ text:`${a} × ${frac(b,c)} = ?`, fig:'', answer:[a*b,c], explain:true,
+        choices:choicesFrom([a*b,c],[[a+b,c],[a*b,a*c],[b,a*c],[a*b+1,c]]) };
+  } else {
+    let d1=rnd(2,10), d2=rnd(2,10); while(d2===d1) d2=rnd(2,10);
+    const n1=rnd(1,d1-1), n2=rnd(1,d2-1);
+    if(n1/d1===n2/d2) return newQuestion();
+    const big = (n1/d1>n2/d2)? [n1,d1]:[n2,d2], small=(n1/d1>n2/d2)? [n2,d2]:[n1,d1];
+    q={ text:'Laquelle est la plus grande ?', fig:'', answer:big, explain:false, choices:[{f:[n1,d1],good:big[0]===n1&&big[1]===d1},{f:[n2,d2],good:big[0]===n2&&big[1]===d2}], small };
+  }
+  quiz.current=q;
+  el('qText').innerHTML=q.text; el('qFig').innerHTML=q.fig; el('feedback').textContent=''; el('feedback').className='feedback';
+  const ch=el('choices'); ch.innerHTML='';
+  q.choices.forEach((c,i)=>{ const b=document.createElement('button'); b.className='num'; b.dataset.i=i; b.innerHTML=frac(c.f[0],c.f[1]); ch.appendChild(b); });
+}
+el('choices').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b||b.disabled) return;
+  const q=quiz.current, c=q.choices[+b.dataset.i];
+  el('choices').querySelectorAll('button').forEach(x=>x.disabled=true);
+  quiz.total++;
+  const detail = q.explain ? `<div class="explain num">${explain(q.answer[0],q.answer[1])}</div>` : '';
+  if(c.good){ quiz.ok++; b.classList.add('good'); el('feedback').innerHTML='Bravo, c\'est juste !'+detail; el('feedback').className='feedback ok'; }
+  else{
+    b.classList.add('wrong');
+    el('choices').querySelectorAll('button').forEach(x=>{ if(q.choices[+x.dataset.i].good) x.classList.add('good'); });
+    el('feedback').innerHTML=`Pas tout à fait. La bonne réponse était ${frac(q.answer[0],q.answer[1])}.${detail}`; el('feedback').className='feedback ko';
+  }
+  if(q.small){ // comparaison : montrer les deux disques
+    el('qFig').innerHTML=`<div class="strip">${discSVG(q.answer[1],q.answer[0])}<span class="plus">&gt;</span>${discSVG(q.small[1],q.small[0])}</div>`;
+  }
+  el('score').textContent=`${quiz.ok} bonne${quiz.ok>1?'s':''} réponse${quiz.ok>1?'s':''} sur ${quiz.total}`;
+});
+el('nextQ').addEventListener('click',newQuestion);
+el('quizReset').addEventListener('click',()=>{ quiz.ok=0; quiz.total=0; el('score').textContent='0 bonne réponse sur 0'; newQuestion(); });
+
+buildWall(); buildDiscs(); buildMult();
+const h=(location.hash||'').replace('#',''); if(['mur','disques','multiplier','defi'].includes(h)) showTab(h);
+})();
+</script>
+</body>
+</html>
