@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Expédition Planisphère</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Planisphère">
+<meta name="theme-color" content="#0e0f30">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%230e0f30'/%3E%3Ccircle cx='90' cy='78' r='78' fill='%231b1c4d'/%3E%3Ctext x='90' y='112' font-size='92' text-anchor='middle'%3E%F0%9F%8C%8D%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#0e0f30;
+    --bg-panel:#1b1c4d;
+    --bg-panel-2:#262a68;
+    --bg-field:#151640;
+    --accent-cyan:#5eead4;
+    --accent-gold:#ffd166;
+    --accent-coral:#ff6b6b;
+    --text-light:#f5f5fc;
+    --text-dim:#a3a6d8;
+    --border-soft:rgba(255,255,255,0.08);
+    --sea:#17306a;
+    --radius-lg:28px;
+    --radius-md:18px;
+    --radius-sm:12px;
+    --fs-display:clamp(1.5rem,5.5vw,2.1rem);
+  }
+  *{ box-sizing:border-box; }
+  html{ padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+  body{
+    margin:0;
+    background:var(--bg-deep);
+    color:var(--text-light);
+    font-family:'Nunito',system-ui,sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding-inline:16px;
+    padding-block:20px;
+    overflow-x:hidden;
+  }
+  .starfield{ position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  .star{ position:absolute; background:#fff; border-radius:50%; opacity:.6; animation:twinkle 3s ease-in-out infinite; }
+  @keyframes twinkle{ 0%,100%{ opacity:.15; } 50%{ opacity:.9; } }
+  @media (prefers-reduced-motion: reduce){ .star{ animation:none; opacity:.5; } .pulse{ animation:none !important; } }
+
+  #app{ position:relative; z-index:1; width:100%; max-width:720px; }
+  .console{
+    background:linear-gradient(180deg,var(--bg-panel),var(--bg-panel-2));
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius-lg);
+    padding:22px;
+    box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .top-actions{ display:flex; gap:8px; flex:none; }
+  .brand{ display:flex; align-items:center; gap:10px; min-width:0; }
+  .brand-emoji{ font-size:1.8rem; line-height:1; }
+  .brand-text h1{
+    font-family:'Baloo 2',system-ui,sans-serif; font-weight:800; font-size:var(--fs-display);
+    margin:0; text-wrap:balance; letter-spacing:.2px; line-height:1.1;
+  }
+  .brand-text p{ margin:2px 0 0; font-size:.8rem; color:var(--text-dim); }
+
+  .icon-btn{
+    background:var(--bg-field); border:1px solid var(--border-soft); color:var(--text-light);
+    width:40px; height:40px; border-radius:50%; font-size:1.1rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex:none; text-decoration:none;
+  }
+  button:focus-visible, a:focus-visible, input:focus-visible{ outline:2px solid var(--accent-cyan); outline-offset:2px; }
+
+  .menu-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  @media (max-width:430px){ .menu-grid{ grid-template-columns:1fr; } }
+  .mission-card{
+    background:var(--bg-field); border:1px solid var(--border-soft); border-radius:var(--radius-md);
+    padding:16px; display:flex; flex-direction:column; align-items:flex-start; gap:6px;
+    color:var(--text-light); font-family:'Nunito',sans-serif; text-align:left; cursor:pointer;
+    transition:transform .12s ease, background .12s ease;
+  }
+  .mission-card:hover{ background:var(--bg-panel-2); transform:translateY(-2px); }
+  .mission-emoji{ font-size:2rem; line-height:1; }
+  .mission-name{ font-family:'Baloo 2',sans-serif; font-weight:700; font-size:1.15rem; line-height:1.15; }
+  .mission-sub{ font-size:.82rem; color:var(--text-dim); }
+  .stars{ font-size:.95rem; letter-spacing:2px; }
+  .stars .off{ opacity:.3; }
+
+  .mission-label{ display:flex; flex-direction:column; align-items:center; text-align:center; font-size:.8rem; color:var(--text-dim); min-width:0; }
+  .mission-label strong{ color:var(--text-light); font-family:'Baloo 2',sans-serif; font-size:1rem; }
+  .progress{ height:8px; border-radius:6px; background:var(--bg-field); overflow:hidden; }
+  .progress > div{ height:100%; background:linear-gradient(90deg,var(--accent-cyan),var(--accent-gold)); transition:width .3s ease; }
+
+  .prompt-card{
+    background:var(--bg-field); border:1px solid var(--border-soft); border-radius:var(--radius-md);
+    padding:14px 16px; text-align:center;
+  }
+  .prompt{ font-family:'Baloo 2',sans-serif; font-weight:700; font-size:clamp(1.1rem,4.4vw,1.4rem); line-height:1.25; text-wrap:balance; }
+  .hint{ font-size:.85rem; color:var(--text-dim); margin-top:4px; }
+  .bonus-tag{ color:var(--accent-gold); }
+
+  .stage{ display:flex; flex-direction:column; gap:12px; }
+  .svg-stage{ display:block; width:100%; height:auto; border-radius:14px; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; }
+  svg.globe{ max-width:420px; margin:0 auto; }
+  svg.map{ background:transparent; }
+  .sea{ fill:var(--sea); stroke:rgba(255,255,255,.2); stroke-width:1; cursor:pointer; }
+  .grat{ fill:none; stroke:rgba(255,255,255,.12); stroke-width:.6; pointer-events:none; }
+  .cont{ stroke:rgba(6,9,32,.85); stroke-width:.6; pointer-events:none; }
+  .hit{ fill:transparent; stroke:transparent; stroke-width:12; stroke-linejoin:round; pointer-events:all; cursor:pointer; }
+  .landp{ stroke:none; }
+  .lab{
+    font-family:'Baloo 2',sans-serif; font-weight:700; font-size:14px; fill:#fff; text-anchor:middle;
+    paint-order:stroke; stroke:#0e0f30; stroke-width:4px; stroke-linejoin:round; pointer-events:none;
+  }
+  .pulse{ animation:pulse 1.4s ease-out infinite; transform-box:fill-box; transform-origin:center; }
+  @keyframes pulse{ 0%{ transform:scale(.6); opacity:1; } 100%{ transform:scale(2.2); opacity:0; } }
+
+  .choices{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; }
+  .choice-btn{
+    background:var(--bg-field); border:2px solid var(--border-soft); color:var(--text-light);
+    border-radius:var(--radius-sm); padding:14px 10px; font-family:'Baloo 2',sans-serif; font-weight:700;
+    font-size:1.05rem; line-height:1.2; cursor:pointer;
+  }
+  .choice-btn:disabled{ cursor:default; }
+  .choice-btn.correct, .proj-card.correct{ background:rgba(94,234,212,.18); border-color:var(--accent-cyan); color:var(--accent-cyan); }
+  .choice-btn.wrong, .proj-card.wrong{ background:rgba(255,107,107,.18); border-color:var(--accent-coral); color:var(--accent-coral); }
+
+  .proj-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  @media (max-width:560px){
+    .proj-grid{ grid-template-columns:1fr; }
+    .proj-card{ flex-direction:row !important; justify-content:flex-start !important; }
+    .proj-card svg{ width:52% !important; max-height:130px; }
+    .proj-cap{ flex:1; text-align:center; }
+  }
+  .proj-card{
+    background:var(--bg-field); border:2px solid var(--border-soft); border-radius:var(--radius-md);
+    padding:8px; cursor:pointer; color:var(--text-light); font-family:'Baloo 2',sans-serif; font-weight:700;
+    display:flex; flex-direction:column; gap:6px; align-items:center; justify-content:center;
+  }
+  .proj-card:disabled{ cursor:default; }
+  .proj-card svg{ width:100%; height:auto; border-radius:8px; }
+  .proj-cap{ min-height:1.3em; font-size:.95rem; }
+
+  .tabs{ display:flex; gap:8px; flex-wrap:wrap; }
+  .tab{
+    flex:1; min-width:90px; background:var(--bg-field); border:2px solid var(--border-soft); color:var(--text-light);
+    border-radius:var(--radius-sm); padding:10px 8px; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:1rem; cursor:pointer;
+  }
+  .tab[aria-pressed="true"]{ border-color:var(--accent-cyan); color:var(--accent-cyan); background:rgba(94,234,212,.12); }
+  .lesson{ background:var(--bg-field); border:1px solid var(--border-soft); border-radius:var(--radius-md); padding:14px 16px; font-size:.95rem; line-height:1.45; }
+  .lesson strong{ color:var(--accent-gold); }
+  .legend{ display:flex; gap:14px; flex-wrap:wrap; font-size:.82rem; color:var(--text-dim); }
+  .legend i{ display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+
+  .controls{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .controls input[type=range]{ flex:1; min-width:160px; accent-color:var(--accent-cyan); height:32px; }
+  .ghost-btn, .small-btn{
+    background:var(--bg-field); color:var(--text-light); border:1px solid var(--border-soft);
+    border-radius:var(--radius-sm); padding:10px 14px; font-family:'Nunito',sans-serif; font-weight:700; font-size:.95rem; cursor:pointer;
+    text-decoration:none; text-align:center;
+  }
+  .ghost-btn{ color:var(--text-dim); padding:12px; }
+  .small-btn[aria-pressed="true"]{ border-color:var(--accent-cyan); color:var(--accent-cyan); }
+  .primary-btn{
+    background:var(--accent-cyan); color:#052b26; border:none; border-radius:var(--radius-sm); padding:14px;
+    font-family:'Baloo 2',sans-serif; font-weight:700; font-size:1.05rem; cursor:pointer;
+  }
+  .small-btn:disabled, .primary-btn:disabled, input:disabled{ opacity:.45; cursor:default; }
+
+  .feedback{ min-height:1.4em; text-align:center; font-weight:700; font-size:.95rem; line-height:1.4; }
+  .feedback.good{ color:var(--accent-cyan); }
+  .feedback.bad{ color:var(--accent-coral); }
+  .feedback.info{ color:var(--accent-gold); }
+
+  .result-hero{ text-align:center; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .result-emoji{ font-size:3rem; }
+  .result-title{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:var(--fs-display); margin:0; }
+  .result-stars{ font-size:1.8rem; letter-spacing:4px; }
+  .result-stats{ display:flex; justify-content:space-around; background:var(--bg-field); border-radius:var(--radius-md); padding:14px; border:1px solid var(--border-soft); }
+  .stat{ text-align:center; }
+  .stat-value{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:1.3rem; font-variant-numeric:tabular-nums; color:var(--accent-gold); }
+  .stat-label{ font-size:.72rem; color:var(--text-dim); }
+  .result-actions{ display:flex; flex-direction:column; gap:10px; }
+  [hidden]{ display:none !important; }
+</style>
+</head>
+<body>
+<div class="starfield" id="starfield"></div>
+<div id="app"></div>
+<script src="d3.min.js"></script>
+<script src="monde.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  var COL = {amerique:'#5b8cff', afrique:'#c850b4', europe:'#ff9f43', asie:'#8fd14f', oceanie:'#ff5c5c', antarctique:'#ffd84a'};
+  var NOM = {amerique:'Amérique', afrique:'Afrique', europe:'Europe', asie:'Asie', oceanie:'Océanie', antarctique:'Antarctique'};
+  var NEUTRAL = '#6e7fc0';
+  var CONT_EXP = {
+    amerique:"L'Amérique (Nord et Sud) est à l'ouest, entre l'océan Pacifique et l'océan Atlantique.",
+    afrique:"L'Afrique est sous l'Europe, entre l'océan Atlantique et l'océan Indien.",
+    europe:"L'Europe est la petite terre au nord de l'Afrique.",
+    asie:"L'Asie est le plus grand continent.",
+    oceanie:"L'Océanie est au sud-est de l'Asie : l'Australie et les îles du Pacifique.",
+    antarctique:"L'Antarctique est le continent blanc tout en bas, autour du pôle Sud."
+  };
+  var OC = {
+    pacifique:{nom:'Océan Pacifique', lab:[-150,0], exp:"Le Pacifique est le plus grand océan, entre l'Asie et l'Amérique.",
+      seeds:[[-140,0],[-150,-30],[-130,30],[-165,15],[165,10],[170,-25],[150,35],[-120,-45],[-175,-5]]},
+    atlantique:{nom:'Océan Atlantique', lab:[-35,20], exp:"L'Atlantique sépare l'Amérique de l'Europe et de l'Afrique.",
+      seeds:[[-35,30],[-25,5],[-20,-25],[-40,-50],[-60,35],[-8,45],[-10,60],[0,-45]]},
+    indien:{nom:'Océan Indien', lab:[78,-18], exp:"L'océan Indien est au sud de l'Asie, entre l'Afrique et l'Océanie.",
+      seeds:[[75,-15],[85,5],[60,-35],[95,-30],[55,12],[40,-20]]},
+    arctique:{nom:'Océan Arctique', lab:[0,80], exp:"L'océan Arctique entoure le pôle Nord."},
+    antarctique:{nom:'Océan Antarctique', lab:[30,-62], exp:"L'océan Antarctique (glacial) entoure le continent Antarctique, autour du pôle Sud."}
+  };
+  var LIG = {
+    equateur:{lab:'Équateur', art:"l'Équateur", lat:0, exp:"L'Équateur partage la Terre en deux moitiés : l'hémisphère Nord et l'hémisphère Sud."},
+    cancer:{lab:'Tropique du Cancer', art:'le tropique du Cancer', lat:23.44, exp:"Le tropique du Cancer est au nord de l'Équateur, dans l'hémisphère Nord."},
+    capricorne:{lab:'Tropique du Capricorne', art:'le tropique du Capricorne', lat:-23.44, exp:"Le tropique du Capricorne est au sud de l'Équateur, dans l'hémisphère Sud."},
+    arctique:{lab:'Cercle polaire arctique', art:'le cercle polaire arctique', lat:66.56, exp:"Le cercle polaire arctique entoure le pôle Nord."},
+    antarctique:{lab:'Cercle polaire antarctique', art:'le cercle polaire antarctique', lat:-66.56, exp:"Le cercle polaire antarctique entoure le pôle Sud."},
+    poleN:{lab:'Pôle Nord', art:'le pôle Nord', exp:"Le pôle Nord est le point tout en haut de la Terre."},
+    poleS:{lab:'Pôle Sud', art:'le pôle Sud', exp:"Le pôle Sud est le point tout en bas de la Terre."},
+    hemN:{lab:'Hémisphère Nord', art:"l'hémisphère Nord", exp:"L'hémisphère Nord est la moitié de la Terre au-dessus de l'Équateur."},
+    hemS:{lab:'Hémisphère Sud', art:"l'hémisphère Sud", exp:"L'hémisphère Sud est la moitié de la Terre sous l'Équateur."},
+    greenwich:{lab:'Méridien de Greenwich', art:'le méridien de Greenwich', exp:"Le méridien de Greenwich va d'un pôle à l'autre. Il sépare l'hémisphère Est de l'hémisphère Ouest."}
+  };
+  var PARALLELS = ['equateur','cancer','capricorne','arctique','antarctique'];
+  var VIEWS = {
+    normale:{center:15, flip:false, label:'Pôle Nord en haut, Europe et Afrique au centre',
+      exp:"C'est la carte qu'on voit le plus souvent : le pôle Nord est en haut, l'Europe et l'Afrique au centre."},
+    ameriques:{center:-90, flip:false, label:'Amériques au centre',
+      exp:"Avec les Amériques au centre, c'est l'Asie qui se retrouve sur les bords de la carte."},
+    asie_oceanie:{center:125, flip:false, label:'Asie et Océanie au centre',
+      exp:"Avec l'Asie et l'Océanie au centre, ce sont les Amériques qui se retrouvent sur les bords."},
+    sud_haut:{center:15, flip:true, label:'Pôle Sud en haut',
+      exp:"On a retourné la carte : le pôle Sud est en haut ! Dans l'espace, il n'y a ni haut ni bas."}
+  };
+  var PROJ = {
+    mercator:{nom:'Mercator', an:1569},
+    peters:{nom:'Peters', an:1973},
+    postel:{nom:'Postel', an:1581}
+  };
+  var AFRIQUE_GROENLAND = "L'Afrique (environ 30 millions de km²) est 14 fois plus grande que le Groenland (2,2 millions de km²).";
+
+  var MISSIONS = [
+    {id:1, emoji:'🌐', nom:'Les lignes imaginaires', sub:'Équateur, tropiques, pôles, hémisphères', build:buildM1},
+    {id:2, emoji:'🗺️', nom:'Continents et océans', sub:'Place les 6 continents et les 5 océans', build:buildM2},
+    {id:3, emoji:'🔄', nom:'Points de vue', sub:'Pôle Sud en haut, Amériques au centre…', build:buildM3},
+    {id:4, emoji:'📐', nom:'Les projections', sub:'Mercator, Peters et Postel', build:buildM4, intro:true}
+  ];
+
+  function load(k, d){ try{ var v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } }
+  function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+  var muted = load('ep_muted', false);
+  var audioCtx = null;
+  function tone(freq, dur, type){
+    if (muted) return;
+    try{
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = type || 'sine'; o.frequency.value = freq; g.gain.value = 0.08;
+      o.connect(g); g.connect(audioCtx.destination); o.start();
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+      o.stop(audioCtx.currentTime + dur);
+    }catch(e){}
+  }
+  function soundOk(){ tone(660,0.12,'triangle'); setTimeout(function(){ tone(880,0.15,'triangle'); }, 90); }
+  function soundKo(){ tone(180,0.25,'sawtooth'); }
+
+  function shuffle(a){ for (var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function sample(a, n){ return shuffle(a.slice()).slice(0, n); }
+  function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  var app = document.getElementById('app');
+  var S = {screen:'menu', mission:null, qs:[], i:0, score:0, done:false};
+
+  function stars(n, size){
+    var s = '';
+    for (var i = 0; i < 3; i++) s += '<span class="' + (i < n ? '' : 'off') + '">' + (i < n ? '⭐' : '☆') + '</span>';
+    return '<span class="' + (size || 'stars') + '">' + s + '</span>';
+  }
+  function muteBtn(){ return '<button class="icon-btn" id="muteBtn" aria-label="Son">' + (muted ? '🔇' : '🔊') + '</button>'; }
+  function bindMute(){
+    document.getElementById('muteBtn').addEventListener('click', function(){
+      muted = !muted; save('ep_muted', muted); this.textContent = muted ? '🔇' : '🔊';
+    });
+  }
+
+  function render(){
+    if (S.screen === 'menu') renderMenu();
+    else if (S.screen === 'intro') renderIntro();
+    else if (S.screen === 'play') renderPlay();
+    else renderResult();
+  }
+
+  function renderMenu(){
+    var prog = load('ep_progress', {});
+    var cards = MISSIONS.map(function(m){
+      var best = prog[m.id] || {stars:0};
+      return '<button class="mission-card" data-m="' + m.id + '">' +
+        '<span class="mission-emoji">' + m.emoji + '</span>' +
+        '<span class="mission-name">' + m.nom + '</span>' +
+        '<span class="mission-sub">' + m.sub + '</span>' + stars(best.stars) + '</button>';
+    }).join('');
+    app.innerHTML = '<div class="console">' +
+      '<div class="topbar"><div class="brand"><span class="brand-emoji">🌍</span><div class="brand-text">' +
+      '<h1>Expédition Planisphère</h1><p>Choisis ta mission !</p></div></div>' +
+      '<div class="top-actions"><a class="icon-btn" href="../" aria-label="Retour à l\'accueil">🏠</a>' + muteBtn() + '</div></div>' +
+      '<div class="menu-grid">' + cards + '</div></div>';
+    bindMute();
+    Array.prototype.forEach.call(app.querySelectorAll('.mission-card'), function(b){
+      b.addEventListener('click', function(){ startMission(parseInt(b.getAttribute('data-m'), 10)); });
+    });
+  }
+
+  function startMission(id){
+    var m = MISSIONS.filter(function(x){ return x.id === id; })[0];
+    S.mission = m; S.qs = m.build(); S.i = 0; S.score = 0; S.done = false;
+    S.screen = m.intro ? 'intro' : 'play';
+    render();
+  }
+
+  function renderPlay(){
+    var m = S.mission, q = S.qs[S.i];
+    S.done = false;
+    app.innerHTML = '<div class="console">' +
+      '<div class="topbar"><button class="icon-btn" id="backBtn" aria-label="Retour aux missions">←</button>' +
+      '<div class="mission-label"><strong>' + m.nom + '</strong><span>question ' + (S.i + 1) + ' / ' + S.qs.length + '</span></div>' + muteBtn() + '</div>' +
+      '<div class="progress"><div style="width:' + (S.i / S.qs.length * 100) + '%"></div></div>' +
+      '<div class="prompt-card"><div class="prompt" id="prompt"></div><div class="hint" id="hint" hidden></div></div>' +
+      '<div class="stage" id="stage"></div>' +
+      '<div class="feedback" id="feedback" aria-live="polite"></div>' +
+      '<button class="primary-btn" id="nextBtn" hidden>Suivant</button></div>';
+    bindMute();
+    document.getElementById('backBtn').addEventListener('click', function(){ S.screen = 'menu'; render(); });
+    document.getElementById('nextBtn').addEventListener('click', function(){
+      if (S.i + 1 < S.qs.length){ S.i++; renderPlay(); } else finish();
+    });
+    mountQuestion(q, document.getElementById('stage'), {
+      prompt:function(t, hint, bonus){
+        document.getElementById('prompt').innerHTML = (bonus ? '<span class="bonus-tag">⭐ Bonus · </span>' : '') + t;
+        var h = document.getElementById('hint'); if (hint){ h.textContent = hint; h.hidden = false; }
+      },
+      answer:function(ok, msg){
+        if (S.done) return;
+        S.done = true; if (ok) S.score++;
+        var f = document.getElementById('feedback');
+        f.className = 'feedback ' + (ok ? 'good' : 'bad');
+        f.textContent = (ok ? 'Bravo ! ' : 'Pas tout à fait. ') + msg;
+        (ok ? soundOk : soundKo)();
+        var nb = document.getElementById('nextBtn');
+        nb.textContent = S.i + 1 < S.qs.length ? 'Suivant' : 'Voir mon résultat';
+        nb.hidden = false;
+      },
+      hint:function(msg){
+        var f = document.getElementById('feedback'); f.className = 'feedback info'; f.textContent = msg;
+      },
+      isDone:function(){ return S.done; }
+    });
+  }
+
+  function finish(){
+    var ratio = S.score / S.qs.length;
+    var n = ratio >= 0.9 ? 3 : ratio >= 0.7 ? 2 : ratio >= 0.5 ? 1 : 0;
+    var prog = load('ep_progress', {});
+    var prev = prog[S.mission.id] || {stars:0, best:0};
+    S.improved = n > prev.stars || S.score > prev.best;
+    prog[S.mission.id] = {stars:Math.max(n, prev.stars), best:Math.max(S.score, prev.best)};
+    save('ep_progress', prog);
+    S.stars = n; S.screen = 'result'; render();
+  }
+
+  function renderResult(){
+    var t = S.stars === 3 ? 'Cartographe en chef !' : S.stars === 2 ? 'Belle expédition !' : S.stars === 1 ? 'Expédition réussie !' : "On repart explorer !";
+    var glyphs = ''; for (var i = 0; i < 3; i++) glyphs += i < S.stars ? '⭐' : '☆';
+    app.innerHTML = '<div class="console">' +
+      '<div class="result-hero"><div class="result-emoji">' + S.mission.emoji + '</div><h2 class="result-title">' + t + '</h2>' +
+      '<div class="result-stars">' + glyphs + '</div>' +
+      (S.improved ? '<p class="feedback good">Nouveau record pour cette mission !</p>' : '') + '</div>' +
+      '<div class="result-stats"><div class="stat"><div class="stat-value">' + S.score + '/' + S.qs.length + '</div><div class="stat-label">Bonnes réponses</div></div></div>' +
+      '<div class="result-actions"><button class="primary-btn" id="again">Rejouer cette mission</button>' +
+      '<button class="ghost-btn" id="menu">Choisir une autre mission</button>' +
+      '<a class="ghost-btn" href="../">Retour à l\'accueil des jeux</a></div></div>';
+    document.getElementById('again').addEventListener('click', function(){ startMission(S.mission.id); });
+    document.getElementById('menu').addEventListener('click', function(){ S.screen = 'menu'; render(); });
+  }
+
+  /* ---------- Constructeurs de questions ---------- */
+
+  function buildM1(){
+    var tap = sample(['equateur','cancer','capricorne','arctique','antarctique','poleN','poleS'], 3).map(function(k){ return {type:'g-tap', target:k}; });
+    var hemi = [{type:'g-tap', target: Math.random() < 0.5 ? 'hemN' : 'hemS'}];
+    var names = sample(PARALLELS, 3).map(function(k){ return {type:'g-name', target:k}; });
+    var qs = shuffle(tap.concat(hemi, names));
+    qs.push({type:'g-tap', target:'greenwich', bonus:true});
+    return qs;
+  }
+  function buildM2(){
+    var conts = Object.keys(NOM), oceans = Object.keys(OC), qs = [];
+    var c = shuffle(conts.slice()), o = shuffle(oceans.slice());
+    c.slice(0, 4).forEach(function(k){ qs.push({type:'m-cont', target:k}); });
+    o.slice(0, 3).forEach(function(k){ qs.push({type:'m-ocean', target:k}); });
+    c.slice(4, 6).forEach(function(k){ qs.push({type:'m-namecont', target:k}); });
+    qs.push({type:'m-nameocean', target:o[3]});
+    return shuffle(qs);
+  }
+  function buildM3(){
+    var names = sample(Object.keys(VIEWS), 3).map(function(k){ return {type:'v-name', target:k}; });
+    var sets = ['ameriques','asie_oceanie','sud_haut'].map(function(k){ return {type:'v-set', target:k}; });
+    return shuffle(names.concat(sets));
+  }
+  function buildM4(){
+    var qs = [
+      {type:'p-pick', target:'mercator', prompt:'Laquelle est la projection de Mercator ?'},
+      {type:'p-pick', target:'peters', prompt:'Laquelle est la projection de Peters ?'},
+      {type:'p-pick', target:'postel', prompt:'Laquelle est la projection centrée sur le pôle Nord ?'},
+      {type:'choice', prompt:'Quelle projection respecte les superficies réelles, mais pas les distances ?', ok:'Peters',
+        others:['Mercator','Postel'], exp:"La projection de Peters (1973) respecte les superficies réelles, mais pas les distances : les formes sont modifiées."},
+      {type:'choice', prompt:'Quel cartographe flamand a créé en 1569 une projection encore très utilisée ?', ok:'Mercator',
+        others:['Peters','Postel'], exp:"Mercator, cartographe flamand (1569), a créé l'une des projections les plus utilisées encore aujourd'hui."},
+      {type:'choice', prompt:'En quelle année la projection de Peters a-t-elle été créée ?', ok:'1973',
+        others:['1569','1581'], exp:"Peters : 1973. Mercator : 1569. Postel : 1581."},
+      {type:'choice', prompt:'En quelle année Postel a-t-il imaginé son planisphère centré sur le pôle Nord ?', ok:'1581',
+        others:['1569','1973'], exp:"Postel : 1581. Mercator : 1569. Peters : 1973."},
+      {type:'choice', prompt:'Sur la carte de Mercator, le Groenland paraît presque aussi grand que l\'Afrique. Dans la réalité ?', ok:"L'Afrique est 14 fois plus grande",
+        others:["Ils ont la même taille","Le Groenland est plus grand"], exp:AFRIQUE_GROENLAND + " Mercator agrandit les terres près des pôles."}
+    ];
+    return qs;
+  }
+
+  /* ---------- Montage des questions ---------- */
+
+  function mountQuestion(q, stage, api){
+    if (q.type === 'g-tap' || q.type === 'g-name') return mountGlobe(q, stage, api);
+    if (q.type.indexOf('m-') === 0) return mountMap(q, stage, api);
+    if (q.type === 'v-name' || q.type === 'v-set') return mountView(q, stage, api);
+    if (q.type === 'p-pick') return mountProjPick(q, stage, api);
+    return mountChoice(q, stage, api);
+  }
+
+  function choiceButtons(stage, options, onPick){
+    var box = d3.select(stage).append('div').attr('class', 'choices');
+    var btns = [];
+    options.forEach(function(o){
+      var b = box.append('button').attr('class', 'choice-btn').text(o.label).node();
+      btns.push({b:b, o:o});
+      b.addEventListener('click', function(){
+        btns.forEach(function(x){ x.b.disabled = true; if (x.o.ok) x.b.classList.add('correct'); });
+        if (!o.ok) b.classList.add('wrong');
+        onPick(o);
+      });
+    });
+  }
+
+  function mountChoice(q, stage, api){
+    api.prompt(q.prompt);
+    var opts = shuffle([{label:q.ok, ok:true}].concat(q.others.map(function(l){ return {label:l, ok:false}; })));
+    choiceButtons(stage, opts, function(o){ api.answer(o.ok, q.exp); });
+  }
+
+  /* ---------- Globe (mission 1) ---------- */
+
+  function mountGlobe(q, stage, api){
+    var W = 360, R = 160, CX = 180, CY = 180, t = q.target, info = LIG[t];
+    var proj = d3.geoOrthographic().scale(R).translate([CX, CY]).rotate([0,0]).clipAngle(90);
+    var path = d3.geoPath(proj);
+    var isName = q.type === 'g-name';
+    if (isName) api.prompt('Comment s\'appelle la ligne en jaune ?');
+    else api.prompt('Touche ' + info.art + '.', t === 'greenwich' ? "Indice : c'est la ligne verticale qui va d'un pôle à l'autre." : null, q.bonus);
+
+    var svg = d3.select(stage).append('svg').attr('class', 'svg-stage globe').attr('viewBox', '0 0 ' + W + ' ' + W)
+      .attr('role', 'img').attr('aria-label', 'Globe terrestre');
+    var defs = svg.append('defs');
+    var gr = defs.append('radialGradient').attr('id', 'oc').attr('cx', '35%').attr('cy', '30%').attr('r', '80%');
+    gr.append('stop').attr('offset', '0%').attr('stop-color', '#2a56b0');
+    gr.append('stop').attr('offset', '100%').attr('stop-color', '#0c1d4a');
+    svg.append('circle').attr('cx', CX).attr('cy', CY).attr('r', R).attr('fill', 'url(#oc)');
+    MONDE.continents.forEach(function(c){
+      svg.append('path').attr('d', path({type:'Feature', geometry:c.geometry})).attr('fill', COL[c.id]).attr('opacity', .5);
+    });
+    svg.append('path').attr('d', path(d3.geoGraticule().step([30,30])())).attr('fill', 'none').attr('stroke', 'rgba(255,255,255,.1)').attr('stroke-width', .6);
+    svg.append('circle').attr('cx', CX).attr('cy', CY).attr('r', R).attr('fill', 'none').attr('stroke', 'rgba(255,255,255,.35)').attr('stroke-width', 1.5);
+
+    function parallel(lat){
+      var pts = d3.range(-180, 181, 5).map(function(l){ return [l, lat]; });
+      return path({type:'LineString', coordinates:pts});
+    }
+    var lineEls = {};
+    PARALLELS.forEach(function(k){
+      var hl = isName && k === t;
+      lineEls[k] = svg.append('path').attr('d', parallel(LIG[k].lat)).attr('fill', 'none')
+        .attr('stroke', hl ? '#ffd166' : 'rgba(255,255,255,.6)').attr('stroke-width', hl ? 4 : 1.6)
+        .attr('stroke-dasharray', hl ? null : '5 4');
+    });
+    var withGreenwich = t === 'greenwich';
+    if (withGreenwich){
+      lineEls.greenwich = svg.append('path').attr('d', path({type:'LineString', coordinates:[[0,-90],[0,-45],[0,0],[0,45],[0,90]]}))
+        .attr('fill', 'none').attr('stroke', 'rgba(255,255,255,.75)').attr('stroke-width', 1.8).attr('stroke-dasharray', '5 4');
+    }
+    [['poleN', CY - R], ['poleS', CY + R]].forEach(function(p){
+      svg.append('circle').attr('cx', CX).attr('cy', p[1]).attr('r', 6).attr('fill', '#fff').attr('stroke', '#0e0f30').attr('stroke-width', 2);
+    });
+
+    function label(txt, x, y){ svg.append('text').attr('class', 'lab').attr('x', x).attr('y', y).text(txt); }
+    function yOf(lat){ return CY - R * Math.sin(lat * Math.PI / 180); }
+
+    function reveal(touched){
+      if (t === 'hemN' || t === 'hemS'){
+        var north = t === 'hemN';
+        svg.append('path').attr('d', 'M' + (CX - R) + ',' + CY + ' A' + R + ',' + R + ' 0 0 ' + (north ? 1 : 0) + ' ' + (CX + R) + ',' + CY + ' Z')
+          .attr('fill', 'rgba(94,234,212,.3)').attr('stroke', '#5eead4').attr('stroke-width', 2);
+        label(info.lab, CX, north ? CY - R / 2 : CY + R / 2);
+      } else if (t === 'poleN' || t === 'poleS'){
+        var py = t === 'poleN' ? CY - R : CY + R;
+        svg.append('circle').attr('cx', CX).attr('cy', py).attr('r', 10).attr('fill', 'none').attr('stroke', '#5eead4').attr('stroke-width', 3);
+        label(info.lab, CX, t === 'poleN' ? py + 26 : py - 18);
+      } else if (t === 'greenwich'){
+        lineEls.greenwich.attr('stroke', '#5eead4').attr('stroke-width', 4).attr('stroke-dasharray', null);
+        label(info.lab, CX, CY - 60);
+      } else {
+        lineEls[t].attr('stroke', '#5eead4').attr('stroke-width', 4.5).attr('stroke-dasharray', null);
+        label(info.lab, CX, yOf(info.lat) - 7);
+      }
+      if (touched && lineEls[touched] && touched !== t) lineEls[touched].attr('stroke', '#ff6b6b').attr('stroke-width', 3.5).attr('stroke-dasharray', null);
+    }
+
+    if (isName){
+      var others = PARALLELS.filter(function(k){ return k !== t; });
+      var opts = shuffle(sample(others, 3).concat([t]).map(function(k){ return {label:cap(LIG[k].art), ok:k === t, k:k}; }));
+      choiceButtons(stage, opts, function(o){ reveal(null); api.answer(o.ok, LIG[t].exp); });
+      return;
+    }
+
+    function touchedAt(x, y){
+      if (Math.hypot(x - CX, y - CY) > R + 12) return null;
+      var c = [
+        {k:'poleN', d:Math.hypot(x - CX, y - (CY - R)), tol:16},
+        {k:'poleS', d:Math.hypot(x - CX, y - (CY + R)), tol:16}
+      ];
+      PARALLELS.forEach(function(k){ c.push({k:k, d:Math.abs(y - yOf(LIG[k].lat)), tol:15}); });
+      if (withGreenwich) c.push({k:'greenwich', d:Math.abs(x - CX), tol:15});
+      var hits = c.filter(function(z){ return z.d <= z.tol; }).sort(function(a, b){ return a.d - b.d; });
+      if (hits.some(function(z){ return z.k === t; })) return {k:t, line:true};
+      if (hits.length) return {k:hits[0].k, line:true};
+      return {k:y < CY ? 'hemN' : 'hemS', line:false};
+    }
+
+    svg.style('cursor', 'pointer').on('click', function(e){
+      if (api.isDone()) return;
+      var p = d3.pointer(e, svg.node()), r = touchedAt(p[0], p[1]);
+      if (!r) return;
+      var zone = t === 'hemN' || t === 'hemS';
+      if (zone && r.line){ api.hint('Touche plutôt une zone du globe, pas une ligne.'); return; }
+      var ok = r.k === t;
+      reveal(ok ? null : r.k);
+      api.answer(ok, ok ? info.exp : 'Tu as touché ' + LIG[r.k].art + '. ' + info.exp);
+    });
+  }
+
+  /* ---------- Planisphère (mission 2 et 3) ---------- */
+
+  function oceanAt(ll){
+    if (ll[1] < -60) return 'antarctique';
+    if (ll[1] > 68) return 'arctique';
+    var best = null, bd = 1e9;
+    ['pacifique','atlantique','indien'].forEach(function(k){
+      OC[k].seeds.forEach(function(s){ var d = d3.geoDistance(ll, s); if (d < bd){ bd = d; best = k; } });
+    });
+    return best;
+  }
+
+  function mapStage(host, o){
+    o = o || {};
+    var W = 720, H = 380;
+    var svg = d3.select(host).append('svg').attr('class', 'svg-stage map').attr('viewBox', '0 0 ' + W + ' ' + H)
+      .attr('role', 'img').attr('aria-label', 'Planisphère');
+    var g = svg.append('g');
+    var proj = d3.geoNaturalEarth1().rotate([-(o.center || 0), 0]).fitExtent([[6,6],[W - 6, H - 6]], {type:'Sphere'});
+    var path = d3.geoPath(proj);
+    var sea = g.append('path').attr('class', 'sea');
+    var grat = g.append('path').attr('class', 'grat');
+    var vis = g.selectAll('.cont').data(MONDE.continents).join('path').attr('class', 'cont').attr('fill', function(d){ return COL[d.id]; });
+    var hit = o.interactive ? g.selectAll('.hit').data(MONDE.continents).join('path').attr('class', 'hit') : null;
+    function draw(){
+      sea.attr('d', path({type:'Sphere'}));
+      grat.attr('d', path(d3.geoGraticule().step([30,30])()));
+      vis.attr('d', function(d){ return path({type:'Feature', geometry:d.geometry}); });
+      if (hit) hit.attr('d', function(d){ return path({type:'Feature', geometry:d.geometry}); });
+    }
+    draw();
+    function setFlip(f){ g.attr('transform', f ? 'rotate(180 ' + (W / 2) + ' ' + (H / 2) + ')' : null); }
+    setFlip(!!o.flip);
+    if (hit) hit.on('click', function(e, d){ if (o.onCont) o.onCont(d.id); });
+    if (o.interactive) sea.on('click', function(e){
+      var ll = proj.invert(d3.pointer(e, g.node()));
+      if (ll && isFinite(ll[0]) && isFinite(ll[1]) && o.onSea) o.onSea(ll);
+    });
+    else sea.style('cursor', 'default');
+    return {
+      svg:svg, g:g,
+      setCenter:function(c){ proj.rotate([-c, 0]); draw(); },
+      setFlip:setFlip,
+      dim:function(ids){ vis.attr('opacity', function(d){ return ids.indexOf(d.id) >= 0 ? 1 : .22; }); },
+      dot:function(ll, color, pulse){
+        var p = proj(ll);
+        if (pulse) g.append('circle').attr('class', 'pulse').attr('cx', p[0]).attr('cy', p[1]).attr('r', 12).attr('fill', 'none').attr('stroke', color).attr('stroke-width', 3);
+        g.append('circle').attr('cx', p[0]).attr('cy', p[1]).attr('r', 6).attr('fill', color).attr('stroke', '#0e0f30').attr('stroke-width', 2);
+      },
+      text:function(ll, txt){ var p = proj(ll); g.append('text').attr('class', 'lab').attr('x', p[0]).attr('y', p[1] + 5).text(txt); }
+    };
+  }
+
+  function mountMap(q, stage, api){
+    var t = q.target;
+    if (q.type === 'm-cont' || q.type === 'm-ocean'){
+      var isOcean = q.type === 'm-ocean';
+      api.prompt(isOcean ? 'Touche l\'' + OC[t].nom.toLowerCase() + '.' : 'Touche l\'' + NOM[t] + '.');
+      var done = function(ok, touchedTxt){
+        if (isOcean){ m.text(OC[t].lab, OC[t].nom); }
+        else { m.dim([t]); }
+        api.answer(ok, (ok ? '' : touchedTxt + ' ') + (isOcean ? OC[t].exp : CONT_EXP[t]));
+      };
+      var m = mapStage(stage, {
+        interactive:true,
+        onCont:function(id){
+          if (api.isDone()) return;
+          if (!isOcean) done(id === t, 'Tu as touché l\'' + NOM[id] + '.');
+          else done(false, 'Tu as touché l\'' + NOM[id] + ', c\'est une terre : cherche un océan.');
+        },
+        onSea:function(ll){
+          if (api.isDone()) return;
+          var k = oceanAt(ll);
+          if (isOcean) done(k === t, 'Tu as touché l\'' + OC[k].nom.toLowerCase() + '.');
+          else done(false, 'Tu as touché l\'' + OC[k].nom.toLowerCase() + ', c\'est de l\'eau : cherche une terre.');
+        }
+      });
+      return;
+    }
+    if (q.type === 'm-namecont'){
+      api.prompt('Quel est le continent en couleur ?');
+      var mc = mapStage(stage, {});
+      mc.dim([t]);
+      var others = sample(Object.keys(NOM).filter(function(k){ return k !== t; }), 3);
+      var opts = shuffle(others.concat([t]).map(function(k){ return {label:NOM[k], ok:k === t}; }));
+      choiceButtons(stage, opts, function(o){ api.answer(o.ok, CONT_EXP[t]); });
+      return;
+    }
+    api.prompt('Quel est cet océan ?', 'Regarde le point qui clignote.');
+    var mo = mapStage(stage, {});
+    mo.dot(OC[t].lab, '#ffd166', true);
+    var oc = sample(Object.keys(OC).filter(function(k){ return k !== t; }), 3);
+    var oopts = shuffle(oc.concat([t]).map(function(k){ return {label:OC[k].nom, ok:k === t}; }));
+    choiceButtons(stage, oopts, function(o){ api.answer(o.ok, OC[t].exp); });
+  }
+
+  /* ---------- Points de vue (mission 3) ---------- */
+
+  function mountView(q, stage, api){
+    var V = VIEWS[q.target];
+    if (q.type === 'v-name'){
+      api.prompt('Quel est le point de vue de cette carte ?');
+      mapStage(stage, {center:V.center, flip:V.flip});
+      var opts = shuffle(Object.keys(VIEWS).map(function(k){ return {label:VIEWS[k].label, ok:k === q.target}; }));
+      choiceButtons(stage, opts, function(o){ api.answer(o.ok, V.exp); });
+      return;
+    }
+    var goals = {
+      ameriques:'Tourne la carte pour mettre les Amériques au centre.',
+      asie_oceanie:'Tourne la carte pour mettre l\'Asie et l\'Océanie au centre.',
+      sud_haut:'Retourne la carte pour mettre le pôle Sud en haut.'
+    };
+    api.prompt(goals[q.target], 'Utilise le curseur, les flèches ou le bouton « Retourner ».');
+    var state = {center:15, flip:false};
+    var m = mapStage(stage, {center:state.center});
+    var box = d3.select(stage).append('div').attr('class', 'controls');
+    var left = box.append('button').attr('class', 'small-btn').attr('id', 'viewLeft').attr('aria-label', 'Tourner vers la gauche').text('◀');
+    var slider = box.append('input').attr('type', 'range').attr('id', 'viewSlider').attr('min', -180).attr('max', 180).attr('step', 5).attr('value', state.center).attr('aria-label', 'Centre de la carte');
+    var right = box.append('button').attr('class', 'small-btn').attr('id', 'viewRight').attr('aria-label', 'Tourner vers la droite').text('▶');
+    var flip = box.append('button').attr('class', 'small-btn').attr('id', 'viewFlip').attr('aria-pressed', 'false').text('↕ Retourner');
+    var ok = d3.select(stage).append('button').attr('class', 'primary-btn').attr('id', 'viewOk').text('Valider');
+    function setCenter(c){
+      c = ((c + 180) % 360 + 360) % 360 - 180;
+      state.center = c; slider.property('value', c); m.setCenter(c);
+    }
+    left.on('click', function(){ if (!api.isDone()) setCenter(state.center - 20); });
+    right.on('click', function(){ if (!api.isDone()) setCenter(state.center + 20); });
+    slider.on('input', function(){ if (!api.isDone()) setCenter(+this.value); });
+    flip.on('click', function(){
+      if (api.isDone()) return;
+      state.flip = !state.flip; flip.attr('aria-pressed', String(state.flip)); m.setFlip(state.flip);
+    });
+    ok.on('click', function(){
+      if (api.isDone()) return;
+      var good;
+      if (q.target === 'sud_haut') good = state.flip;
+      else good = !state.flip && Math.abs(state.center - V.center) <= (q.target === 'ameriques' ? 35 : 30);
+      [left, right, flip, ok].forEach(function(b){ b.property('disabled', true); });
+      slider.property('disabled', true);
+      if (!good){ state.flip = V.flip; m.setFlip(V.flip); setCenter(V.center); flip.attr('aria-pressed', String(V.flip)); }
+      api.answer(good, good ? V.exp : 'Voilà la bonne vue. ' + V.exp);
+    });
+  }
+
+  /* ---------- Projections (mission 4) ---------- */
+
+  function makeProj(kind, W){
+    var p, H;
+    if (kind === 'mercator'){
+      var s = W / (2 * Math.PI), yMax = Math.log(Math.tan(Math.PI / 4 + 84 * Math.PI / 360));
+      H = Math.round(2 * yMax * s);
+      p = d3.geoMercator().scale(s).translate([W / 2, H / 2]).clipExtent([[0,0],[W,H]]);
+      return {p:p, H:H, shape:function(svg){ svg.append('rect').attr('width', W).attr('height', H).attr('fill', '#17306a'); }};
+    }
+    if (kind === 'peters'){
+      var phi0 = Math.PI / 4, k = W / (2 * Math.PI * Math.cos(phi0));
+      p = d3.geoProjection(function(l, f){ return [l * Math.cos(phi0), Math.sin(f) / Math.cos(phi0)]; }).scale(k);
+      H = Math.round(2 * k / Math.cos(phi0));
+      p.translate([W / 2, H / 2]);
+      return {p:p, H:H, shape:function(svg){ svg.append('rect').attr('width', W).attr('height', H).attr('fill', '#17306a'); }};
+    }
+    var Rr = W / 2 - 4;
+    p = d3.geoAzimuthalEquidistant().rotate([0, -90]).clipAngle(135).scale(Rr / (135 * Math.PI / 180)).translate([W / 2, W / 2]);
+    return {p:p, H:W, shape:function(svg){ svg.append('circle').attr('cx', W / 2).attr('cy', W / 2).attr('r', Rr).attr('fill', '#17306a'); }};
+  }
+
+  function projThumb(host, kind, W, hl){
+    var mp = makeProj(kind, W);
+    var svg = d3.select(host).append('svg').attr('viewBox', '0 0 ' + W + ' ' + mp.H).attr('role', 'img').attr('aria-label', 'Carte en projection');
+    mp.shape(svg);
+    var path = d3.geoPath(mp.p);
+    MONDE.continents.forEach(function(c){
+      svg.append('path').attr('class', 'landp').attr('d', path({type:'Feature', geometry:c.geometry}))
+        .attr('fill', hl && c.id === 'afrique' ? COL.afrique : NEUTRAL);
+    });
+    if (hl) svg.append('path').attr('class', 'landp').attr('d', path({type:'Feature', geometry:MONDE.groenland})).attr('fill', '#5eead4');
+    return svg;
+  }
+
+  function mountProjPick(q, stage, api){
+    api.prompt(q.prompt);
+    var grid = d3.select(stage).append('div').attr('class', 'proj-grid');
+    var kinds = shuffle(Object.keys(PROJ)), cards = [];
+    kinds.forEach(function(k){
+      var b = grid.append('button').attr('class', 'proj-card').attr('aria-label', 'Carte ' + (cards.length + 1)).node();
+      projThumb(b, k, 300, false);
+      var cap = document.createElement('div'); cap.className = 'proj-cap'; b.appendChild(cap);
+      cards.push({b:b, k:k, cap:cap});
+      b.addEventListener('click', function(){
+        cards.forEach(function(c){
+          c.b.disabled = true;
+          c.cap.textContent = PROJ[c.k].nom + ' (' + PROJ[c.k].an + ')';
+          if (c.k === q.target) c.b.classList.add('correct');
+        });
+        if (k !== q.target) b.classList.add('wrong');
+        var exp = {
+          mercator:"Mercator (1569) : cartographe flamand, projection encore très utilisée. Le Groenland y paraît énorme !",
+          peters:"Peters (1973) : respecte les superficies réelles, mais pas les distances. Les formes sont modifiées.",
+          postel:"Postel (1581) : planisphère centré sur le pôle Nord."
+        }[q.target];
+        api.answer(k === q.target, exp);
+      });
+    });
+  }
+
+  function renderIntro(){
+    var cur = 'mercator';
+    var texts = {
+      mercator:"<strong>Mercator (1569)</strong>, cartographe flamand. C'est encore l'une des projections les plus utilisées. Plus on s'approche des pôles, plus les terres sont agrandies : le Groenland paraît presque aussi grand que l'Afrique !",
+      peters:"<strong>Peters (1973)</strong> respecte les superficies réelles, mais pas les distances : les formes sont modifiées. Ici, on voit que l'Afrique est bien plus grande que le Groenland.",
+      postel:"<strong>Postel (1581)</strong> : un planisphère centré sur le pôle Nord. Les terres proches du pôle Nord sont bien placées, celles du Sud sont étirées sur les bords."
+    };
+    app.innerHTML = '<div class="console">' +
+      '<div class="topbar"><button class="icon-btn" id="backBtn" aria-label="Retour aux missions">←</button>' +
+      '<div class="mission-label"><strong>' + S.mission.nom + '</strong><span>Découvre les cartes</span></div>' + muteBtn() + '</div>' +
+      '<div class="tabs" id="tabs"></div>' +
+      '<div id="projStage"></div>' +
+      '<div class="legend"><span><i style="background:' + COL.afrique + '"></i>Afrique</span><span><i style="background:#5eead4"></i>Groenland</span></div>' +
+      '<div class="lesson" id="lesson"></div>' +
+      '<button class="primary-btn" id="go">Commencer le quiz</button></div>';
+    bindMute();
+    document.getElementById('backBtn').addEventListener('click', function(){ S.screen = 'menu'; render(); });
+    document.getElementById('go').addEventListener('click', function(){ S.screen = 'play'; render(); });
+    function show(){
+      var tabs = document.getElementById('tabs'); tabs.innerHTML = '';
+      Object.keys(PROJ).forEach(function(k){
+        var b = document.createElement('button'); b.className = 'tab'; b.textContent = PROJ[k].nom; b.setAttribute('aria-pressed', String(k === cur));
+        b.addEventListener('click', function(){ cur = k; show(); });
+        tabs.appendChild(b);
+      });
+      var st = document.getElementById('projStage'); st.innerHTML = '';
+      var holder = document.createElement('div'); holder.style.maxWidth = (cur === 'postel' ? '440px' : '640px'); holder.style.margin = '0 auto';
+      st.appendChild(holder);
+      var svg = projThumb(holder, cur, 560, true); svg.attr('class', 'svg-stage');
+      document.getElementById('lesson').innerHTML = texts[cur] + (cur === 'postel' ? '' : '<br><br>' + AFRIQUE_GROENLAND);
+    }
+    show();
+  }
+
+  function stars_bg(){
+    var field = document.getElementById('starfield'), frag = document.createDocumentFragment();
+    for (var i = 0; i < 70; i++){
+      var s = document.createElement('span'); s.className = 'star';
+      var size = 1 + Math.random() * 2;
+      s.style.width = size + 'px'; s.style.height = size + 'px';
+      s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 100 + '%';
+      s.style.animationDuration = (2 + Math.random() * 3) + 's'; s.style.animationDelay = (Math.random() * 3) + 's';
+      frag.appendChild(s);
+    }
+    field.appendChild(frag);
+  }
+
+  stars_bg();
+  render();
+})();
+</script>
+</body>
+</html>
